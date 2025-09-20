@@ -1,11 +1,5 @@
-import MinimalLayout from "../components/MinimalLayout";
-import DataDebug from "../components/DataDebug";
+import SimpleLayout from "../components/SimpleLayout";
 
 export default function WritePage() {
-  return (
-    <>
-      <MinimalLayout />
-      <DataDebug />
-    </>
-  );
+  return <SimpleLayout />;
 }
