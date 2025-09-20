@@ -7,7 +7,6 @@ import AppLayout from "./pages/AppLayout";
 import WritePage from "./pages/WritePage";
 import EntitiesPage from "./pages/EntitiesPage";
 import CommitsPage from "./pages/CommitsPage";
-import FirebaseTestPage from "./pages/FirebaseTestPage";
 import "./index.css";
 
 const router = createBrowserRouter([
@@ -24,7 +23,6 @@ const router = createBrowserRouter([
       { index: true, element: <WritePage /> },
       { path: "entities", element: <EntitiesPage /> },
       { path: "commits", element: <CommitsPage /> },
-      { path: "firebase-test", element: <FirebaseTestPage /> },
     ],
   },
 ]);
