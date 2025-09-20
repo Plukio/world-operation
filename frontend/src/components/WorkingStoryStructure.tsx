@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, query, orderBy } from 'firebase/firestore';
 import { db } from '../lib/firebase';
-import { useAuth } from '../contexts/AuthContext';
 
 interface StoryNode {
   id: string;
@@ -28,7 +27,6 @@ interface StoryStructureProps {
 }
 
 export default function WorkingStoryStructure({ onSceneSelect }: StoryStructureProps) {
-  const { user } = useAuth();
   const [nodes, setNodes] = useState<StoryNode[]>([]);
   const [scenes, setScenes] = useState<Scene[]>([]);
   const [loading, setLoading] = useState(false);
@@ -246,20 +244,20 @@ export default function WorkingStoryStructure({ onSceneSelect }: StoryStructureP
     const nodeScenes = getScenesForNode(node.id);
 
     return (
-      <div key={node.id} className="mb-2">
-        <div className="flex items-center space-x-2 group">
+      <div key={node.id} className="mb-3">
+        <div className="flex items-center space-x-3 group">
           {/* Expand/Collapse Button */}
           {(episodes.length > 0 || nodeScenes.length > 0) && (
             <button
               onClick={() => toggleNode(node.id)}
-              className="w-4 h-4 flex items-center justify-center text-gray-400 hover:text-gray-600"
+              className="w-6 h-6 flex items-center justify-center text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100 transition-colors"
             >
               {isExpanded ? '▼' : '▶'}
             </button>
           )}
           
-          {/* Node Icon */}
-          <div className={`w-3 h-3 rounded-full ${node.kind === 'epic' ? 'bg-blue-600' : 'bg-purple-600'}`}></div>
+          {/* Modern Node Icon */}
+          <div className={`w-4 h-4 rounded-full shadow-sm ${node.kind === 'epic' ? 'bg-gradient-to-br from-blue-500 to-blue-600' : 'bg-gradient-to-br from-purple-500 to-purple-600'}`}></div>
           
           {/* Node Title */}
           {editingItem?.type === 'node' && editingItem.id === node.id ? (
@@ -272,12 +270,12 @@ export default function WorkingStoryStructure({ onSceneSelect }: StoryStructureP
                 if (e.key === 'Escape') cancelEdit();
               }}
               onBlur={saveEdit}
-              className="flex-1 px-2 py-1 text-sm border border-blue-300 rounded"
+              className="flex-1 px-3 py-1.5 text-sm border border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               autoFocus
             />
           ) : (
             <span 
-              className="flex-1 text-sm font-medium text-gray-900 cursor-pointer hover:text-blue-600"
+              className="flex-1 text-sm font-medium text-gray-900 cursor-pointer hover:text-blue-600 transition-colors"
               onDoubleClick={() => startEdit('node', node.id, node.title)}
               onClick={() => onSceneSelect && onSceneSelect(node.id)}
             >
@@ -285,34 +283,36 @@ export default function WorkingStoryStructure({ onSceneSelect }: StoryStructureP
             </span>
           )}
           
-          {/* Actions */}
-          <div className="opacity-0 group-hover:opacity-100 flex space-x-1">
+          {/* Modern Actions */}
+          <div className="opacity-0 group-hover:opacity-100 flex space-x-1 transition-opacity">
             {node.kind === 'epic' && (
               <button
                 onClick={() => handleCreateEpisode(node.id)}
-                className="text-xs text-purple-600 hover:text-purple-700"
+                className="px-2 py-1 text-xs bg-purple-100 hover:bg-purple-200 text-purple-700 rounded-lg transition-colors"
                 title="Add Episode"
               >
                 +E
               </button>
             )}
-            <button
-              onClick={() => handleCreateScene(node.id)}
-              className="text-xs text-orange-600 hover:text-orange-700"
-              title="Add Scene"
-            >
-              +S
-            </button>
+            {node.kind === 'episode' && (
+              <button
+                onClick={() => handleCreateScene(node.id)}
+                className="px-2 py-1 text-xs bg-orange-100 hover:bg-orange-200 text-orange-700 rounded-lg transition-colors"
+                title="Add Scene"
+              >
+                +S
+              </button>
+            )}
             <button
               onClick={() => startEdit('node', node.id, node.title)}
-              className="text-xs text-gray-600 hover:text-gray-700"
+              className="px-2 py-1 text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors"
               title="Edit"
             >
               ✏️
             </button>
             <button
               onClick={() => handleDelete('node', node.id, node.title)}
-              className="text-xs text-red-600 hover:text-red-700"
+              className="px-2 py-1 text-xs bg-red-100 hover:bg-red-200 text-red-700 rounded-lg transition-colors"
               title="Delete"
             >
               🗑️
@@ -384,41 +384,48 @@ export default function WorkingStoryStructure({ onSceneSelect }: StoryStructureP
   }, []);
 
   return (
-    <div className="w-80 h-full bg-gray-50 border-r border-gray-200 flex flex-col">
-      {/* Header */}
-      <div className="p-4 border-b border-gray-200 flex items-center justify-between">
-        <h2 className="font-semibold text-gray-900">Story Structure</h2>
+    <div className="w-80 h-full bg-white/60 backdrop-blur-sm border-r border-white/20 flex flex-col shadow-xl">
+      {/* Modern Header */}
+      <div className="p-6 border-b border-white/20 flex items-center justify-between">
+        <div>
+          <h2 className="font-bold text-gray-900 text-lg">📚 Story Universe</h2>
+          <p className="text-xs text-gray-500 mt-1">Build your creative world</p>
+        </div>
         <div className="flex space-x-2">
           <button
             onClick={loadData}
             disabled={loading}
-            className="px-2 py-1 text-xs bg-gray-600 hover:bg-gray-700 text-white rounded disabled:opacity-50"
+            className="px-3 py-1.5 text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg disabled:opacity-50 transition-colors"
           >
-            {loading ? 'Loading...' : 'Refresh'}
+            {loading ? '⏳' : '🔄'}
           </button>
           <button
             onClick={handleCreateEpic}
             disabled={loading}
-            className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm disabled:opacity-50"
+            className="px-4 py-1.5 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-lg text-sm disabled:opacity-50 transition-all shadow-lg hover:shadow-xl"
           >
-            {loading ? 'Creating...' : '+ Epic'}
+            {loading ? '✨' : '🚀 Epic'}
           </button>
         </div>
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto p-4">
+      <div className="flex-1 overflow-y-auto p-6">
         {loading && nodes.length === 0 ? (
-          <div className="text-center py-8 text-gray-500">
-            <p>Loading story structure...</p>
+          <div className="text-center py-12">
+            <div className="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-gray-600 font-medium">Loading your creative universe...</p>
           </div>
         ) : nodes.length === 0 ? (
-          <div className="text-center py-8 text-gray-500">
-            <p className="text-sm">No story structure yet</p>
-            <p className="text-xs mt-1">Create your first epic to get started</p>
+          <div className="text-center py-12">
+            <div className="w-16 h-16 bg-gradient-to-br from-blue-100 to-purple-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <span className="text-2xl">🌟</span>
+            </div>
+            <p className="text-gray-700 font-medium mb-2">Your story universe is empty</p>
+            <p className="text-sm text-gray-500">Create your first epic to begin your creative journey</p>
           </div>
         ) : (
-          <div className="space-y-2">
+          <div className="space-y-3">
             {nodes
               .filter(node => node.kind === 'epic')
               .sort((a, b) => a.order_idx - b.order_idx)
@@ -427,13 +434,26 @@ export default function WorkingStoryStructure({ onSceneSelect }: StoryStructureP
         )}
       </div>
 
-      {/* Debug Info */}
-      <div className="p-2 text-xs text-gray-400 border-t border-gray-200">
-        <div>User: {user?.email || 'Not logged in'}</div>
-        <div>Nodes: {nodes.length}</div>
-        <div>Scenes: {scenes.length}</div>
-        <div>Epics: {nodes.filter(n => n.kind === 'epic').length}</div>
-        <div>Episodes: {nodes.filter(n => n.kind === 'episode').length}</div>
+      {/* Modern Debug Info */}
+      <div className="p-4 text-xs text-gray-500 border-t border-white/20 bg-white/30">
+        <div className="grid grid-cols-2 gap-2">
+          <div className="flex items-center space-x-2">
+            <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+            <span>Epics: {nodes.filter(n => n.kind === 'epic').length}</span>
+          </div>
+          <div className="flex items-center space-x-2">
+            <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+            <span>Episodes: {nodes.filter(n => n.kind === 'episode').length}</span>
+          </div>
+          <div className="flex items-center space-x-2">
+            <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+            <span>Scenes: {scenes.length}</span>
+          </div>
+          <div className="flex items-center space-x-2">
+            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+            <span>Total: {nodes.length + scenes.length}</span>
+          </div>
+        </div>
       </div>
     </div>
   );

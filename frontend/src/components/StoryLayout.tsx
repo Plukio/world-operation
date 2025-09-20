@@ -69,75 +69,131 @@ export default function StoryLayout() {
   }, [selectedSceneId, sceneContent]);
 
   return (
-    <div className="h-screen flex bg-white">
+    <div className="h-screen flex bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
       {/* Story Structure Sidebar */}
       <WorkingStoryStructure onSceneSelect={handleSceneSelect} />
       
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col">
-        {/* Header */}
-        <div className="h-12 bg-white border-b border-gray-200 flex items-center px-4">
+        {/* Modern Header */}
+        <div className="h-16 bg-white/80 backdrop-blur-sm border-b border-gray-200/50 flex items-center px-6 shadow-sm">
           <div className="flex items-center space-x-4">
-            <h1 className="text-lg font-semibold text-gray-900">
-              {selectedSceneId ? 'Scene Editor' : 'World Operation'}
-            </h1>
-            {selectedSceneId && (
-              <div className="text-sm text-gray-500">
-                Scene ID: {selectedSceneId}
+            <div className="flex items-center space-x-3">
+              <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
+                <span className="text-white font-bold text-sm">WO</span>
               </div>
-            )}
+              <div>
+                <h1 className="text-xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
+                  {selectedSceneId ? 'Writing Canvas' : 'World Operation'}
+                </h1>
+                {selectedSceneId && (
+                  <div className="text-xs text-gray-500 font-mono">
+                    Scene: {selectedSceneId.substring(0, 8)}...
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
           
-          {/* Status Indicators */}
-          <div className="ml-auto flex items-center space-x-4">
+          {/* Modern Status Indicators */}
+          <div className="ml-auto flex items-center space-x-3">
             {isLoading && (
-              <div className="text-sm text-blue-600">Loading...</div>
+              <div className="flex items-center space-x-2 px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm">
+                <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                <span>Loading...</span>
+              </div>
             )}
             {isSaving && (
-              <div className="text-sm text-blue-600">Auto-saving...</div>
+              <div className="flex items-center space-x-2 px-3 py-1 bg-amber-100 text-amber-700 rounded-full text-sm">
+                <div className="w-2 h-2 bg-amber-500 rounded-full animate-pulse"></div>
+                <span>Auto-saving...</span>
+              </div>
             )}
             {!isSaving && !isLoading && lastSaved && (
-              <div className="text-sm text-green-600">
-                Saved {lastSaved.toLocaleTimeString()}
+              <div className="flex items-center space-x-2 px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm">
+                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                <span>Saved {lastSaved.toLocaleTimeString()}</span>
               </div>
             )}
           </div>
         </div>
 
-        {/* Editor Area */}
-        <div className="flex-1 p-6">
+        {/* Modern Editor Area */}
+        <div className="flex-1 p-8">
           {selectedSceneId ? (
             <div className="h-full">
               {isLoading ? (
                 <div className="h-full flex items-center justify-center">
-                  <div className="text-gray-500">Loading scene content...</div>
+                  <div className="text-center">
+                    <div className="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-4"></div>
+                    <div className="text-gray-600 font-medium">Loading your creative space...</div>
+                  </div>
                 </div>
               ) : (
-                <RichTextEditor
-                  value={sceneContent}
-                  onChange={handleEditorChange}
-                  placeholder="Start writing your scene..."
-                />
+                <div className="h-full bg-white/70 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 overflow-hidden">
+                  <RichTextEditor
+                    value={sceneContent}
+                    onChange={handleEditorChange}
+                    placeholder="✨ Begin your story here... Let your imagination flow freely..."
+                  />
+                </div>
               )}
             </div>
           ) : (
             <div className="h-full flex items-center justify-center">
-              <div className="text-center">
-                <h2 className="text-xl font-semibold text-gray-900 mb-4">
-                  Welcome to World Operation
-                </h2>
-                <p className="text-gray-600 mb-6">
-                  Select a scene from the sidebar to start writing
-                </p>
-                <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm max-w-md">
-                  <h3 className="font-medium text-gray-900 mb-2">Getting Started:</h3>
-                  <ul className="text-sm text-gray-600 space-y-1 text-left">
-                    <li>• Create an Epic using the "+ Epic" button</li>
-                    <li>• Add Episodes to your Epic</li>
-                    <li>• Create Scenes within Episodes</li>
-                    <li>• Click on a Scene to start writing</li>
-                    <li>• Content auto-saves as you type</li>
-                  </ul>
+              <div className="text-center max-w-2xl">
+                <div className="mb-8">
+                  <div className="w-20 h-20 bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-600 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-2xl">
+                    <span className="text-white text-2xl font-bold">✍️</span>
+                  </div>
+                  <h2 className="text-4xl font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-purple-800 bg-clip-text text-transparent mb-4">
+                    Welcome to World Operation
+                  </h2>
+                  <p className="text-xl text-gray-600 mb-8">
+                    Your creative universe awaits. Build epic stories, one scene at a time.
+                  </p>
+                </div>
+                
+                <div className="bg-white/80 backdrop-blur-sm p-8 rounded-3xl shadow-xl border border-white/20 max-w-lg mx-auto">
+                  <h3 className="font-bold text-gray-900 mb-6 text-lg">🚀 Getting Started</h3>
+                  <div className="space-y-4 text-left">
+                    <div className="flex items-start space-x-3">
+                      <div className="w-6 h-6 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-sm font-bold mt-0.5">1</div>
+                      <div>
+                        <div className="font-medium text-gray-900">Create an Epic</div>
+                        <div className="text-sm text-gray-600">Start your grand story with the "+ Epic" button</div>
+                      </div>
+                    </div>
+                    <div className="flex items-start space-x-3">
+                      <div className="w-6 h-6 bg-purple-100 text-purple-600 rounded-full flex items-center justify-center text-sm font-bold mt-0.5">2</div>
+                      <div>
+                        <div className="font-medium text-gray-900">Add Episodes</div>
+                        <div className="text-sm text-gray-600">Break your epic into episodes using "+E"</div>
+                      </div>
+                    </div>
+                    <div className="flex items-start space-x-3">
+                      <div className="w-6 h-6 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center text-sm font-bold mt-0.5">3</div>
+                      <div>
+                        <div className="font-medium text-gray-900">Create Scenes</div>
+                        <div className="text-sm text-gray-600">Add scenes to episodes with "+S"</div>
+                      </div>
+                    </div>
+                    <div className="flex items-start space-x-3">
+                      <div className="w-6 h-6 bg-green-100 text-green-600 rounded-full flex items-center justify-center text-sm font-bold mt-0.5">4</div>
+                      <div>
+                        <div className="font-medium text-gray-900">Start Writing</div>
+                        <div className="text-sm text-gray-600">Click any scene to begin your creative journey</div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="mt-6 p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl border border-blue-200">
+                    <div className="flex items-center space-x-2 text-sm text-blue-700">
+                      <span className="text-lg">💾</span>
+                      <span className="font-medium">Auto-save enabled</span>
+                    </div>
+                    <div className="text-xs text-blue-600 mt-1">Your words are automatically saved as you type</div>
+                  </div>
                 </div>
               </div>
             </div>
