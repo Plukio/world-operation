@@ -2,23 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Modern Git-like Design System */
-:root {
-  --git-bg-primary: #0d1117;
-  --git-bg-secondary: #161b22;
-  --git-bg-tertiary: #21262d;
-  --git-border: #30363d;
-  --git-text-primary: #f0f6fc;
-  --git-text-secondary: #8b949e;
-  --git-text-muted: #6e7681;
-  --git-accent-blue: #58a6ff;
-  --git-accent-green: #3fb950;
-  --git-accent-orange: #d29922;
-  --git-accent-red: #f85149;
-  --git-accent-purple: #a5a3ff;
-}
-
-/* Base styles */
+/* Minimal Design System */
 body {
   margin: 0;
   font-family:
@@ -26,7 +10,7 @@ body {
     "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  @apply bg-gray-900 text-gray-100;
+  @apply bg-white text-gray-900;
 }
 
 code {
@@ -34,21 +18,29 @@ code {
     source-code-pro, Menlo, Monaco, Consolas, "Courier New", monospace;
 }
 
-/* Custom prose styles for the editor */
+/* Fiction Writer Prose Styles */
+.prose {
+  @apply text-gray-900 leading-relaxed max-w-none;
+}
+
 .prose p {
-  margin: 0.75rem 0;
+  @apply mb-4 text-gray-800 leading-7;
 }
 
 .prose h1 {
-  @apply text-3xl font-bold text-gray-900 mb-6;
+  @apply text-3xl font-bold text-gray-900 mb-6 mt-8;
 }
 
 .prose h2 {
-  @apply text-2xl font-semibold text-gray-800 mb-4;
+  @apply text-2xl font-semibold text-gray-800 mb-4 mt-6;
 }
 
 .prose h3 {
-  @apply text-xl font-semibold text-gray-800 mb-3;
+  @apply text-xl font-semibold text-gray-800 mb-3 mt-4;
+}
+
+.prose h4 {
+  @apply text-lg font-medium text-gray-800 mb-2 mt-3;
 }
 
 .prose ul, .prose ol {
@@ -60,102 +52,99 @@ code {
 }
 
 .prose blockquote {
-  @apply border-l-4 border-gray-300 pl-4 italic text-gray-600 my-4;
+  @apply border-l-4 border-gray-300 pl-4 italic text-gray-600 my-6 bg-gray-50 py-2;
 }
 
 .prose code {
-  @apply bg-gray-100 px-2 py-1 rounded text-sm font-mono;
+  @apply bg-gray-100 px-2 py-1 rounded text-sm font-mono text-gray-800;
 }
 
 .prose pre {
-  @apply bg-gray-100 p-4 rounded overflow-x-auto my-4;
+  @apply bg-gray-100 p-4 rounded overflow-x-auto my-4 border;
 }
 
 .prose pre code {
   @apply bg-transparent p-0;
 }
 
-/* Git-like scrollbars */
+.prose strong {
+  @apply font-semibold text-gray-900;
+}
+
+.prose em {
+  @apply italic text-gray-700;
+}
+
+.prose u {
+  @apply underline;
+}
+
+.prose mark {
+  @apply bg-yellow-200 px-1 rounded;
+}
+
+/* Minimal scrollbars */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  @apply bg-gray-800;
+  @apply bg-gray-100;
 }
 
 ::-webkit-scrollbar-thumb {
-  @apply bg-gray-600 rounded;
+  @apply bg-gray-300 rounded;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  @apply bg-gray-500;
+  @apply bg-gray-400;
 }
 
-/* Focus styles for better accessibility */
+/* Focus styles */
 .focus-visible {
-  @apply outline-none ring-2 ring-blue-500 ring-offset-2 ring-offset-gray-900;
+  @apply outline-none ring-2 ring-blue-500 ring-offset-2;
 }
 
-/* Git-like button styles */
-.git-button {
-  @apply px-3 py-1.5 text-sm font-medium rounded-md transition-colors;
+/* Minimal button styles */
+.btn-minimal {
+  @apply px-3 py-1.5 text-sm font-medium rounded transition-colors;
 }
 
-.git-button-primary {
+.btn-primary {
   @apply bg-blue-600 hover:bg-blue-700 text-white;
 }
 
-.git-button-secondary {
-  @apply bg-gray-700 hover:bg-gray-600 text-gray-200;
+.btn-secondary {
+  @apply bg-gray-100 hover:bg-gray-200 text-gray-700;
 }
 
-.git-button-danger {
-  @apply bg-red-600 hover:bg-red-700 text-white;
+.btn-danger {
+  @apply bg-red-100 hover:bg-red-200 text-red-700;
 }
 
-/* Git-like input styles */
-.git-input {
-  @apply bg-gray-700 border border-gray-600 text-white rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent;
+/* Minimal input styles */
+.input-minimal {
+  @apply border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent;
 }
 
-/* Git-like card styles */
-.git-card {
-  @apply bg-gray-800 border border-gray-700 rounded-lg;
-}
-
-/* Animation utilities */
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-.animate-fade-in {
-  animation: fadeIn 0.2s ease-out;
-}
-
-/* Git-like status indicators */
-.status-indicator {
-  @apply inline-flex items-center space-x-2 text-sm;
-}
-
+/* Status indicators */
 .status-dot {
   @apply w-2 h-2 rounded-full;
 }
 
-.status-dot-success {
+.status-success {
   @apply bg-green-500;
 }
 
-.status-dot-warning {
+.status-warning {
   @apply bg-yellow-500;
 }
 
-.status-dot-error {
+.status-error {
   @apply bg-red-500;
 }
 
-.status-dot-info {
+.status-info {
   @apply bg-blue-500;
 }

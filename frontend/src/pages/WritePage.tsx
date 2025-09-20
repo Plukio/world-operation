@@ -1,5 +1,5 @@
-import GitLayout from "../components/GitLayout";
+import MinimalLayout from "../components/MinimalLayout";
 
 export default function WritePage() {
-  return <GitLayout />;
+  return <MinimalLayout />;
 }
