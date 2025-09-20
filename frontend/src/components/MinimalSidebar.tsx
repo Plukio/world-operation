@@ -22,22 +22,40 @@ export default function MinimalSidebar({
   } | null>(null);
 
   const handleCreate = async (type: 'epic' | 'chapter' | 'scene', parentId?: string) => {
+    console.log('🎯 handleCreate called:', { type, parentId });
     const title = prompt(`Enter ${type} name:`);
+    console.log('📝 User entered title:', title);
     
     if (title && title.trim()) {
       try {
+        console.log('🚀 Starting creation process...');
         if (type === 'epic') {
+          console.log('📚 Creating epic with title:', title.trim());
           await createNode('epic', title.trim());
+          console.log('✅ Epic creation completed');
         } else if (type === 'chapter' && parentId) {
+          console.log('📖 Creating chapter with title:', title.trim(), 'parentId:', parentId);
           await createNode('chapter', title.trim(), parentId);
+          console.log('✅ Chapter creation completed');
         } else if (type === 'scene' && parentId) {
+          console.log('🎬 Creating scene with title:', title.trim(), 'parentId:', parentId);
           await createScene(parentId, title.trim());
+          console.log('✅ Scene creation completed');
         }
-        // The createNode/createScene functions should automatically refresh the structure
+        console.log('🎉 All creation processes completed successfully');
       } catch (error) {
-        console.error('Failed to create:', error);
-        alert(`Failed to create ${type}. Please try again.`);
+        console.error('❌ Failed to create:', error);
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        const errorCode = (error as any)?.code || 'unknown';
+        console.error('❌ Error details:', {
+          message: errorMessage,
+          code: errorCode,
+          stack: error instanceof Error ? error.stack : undefined
+        });
+        alert(`Failed to create ${type}: ${errorMessage}`);
       }
+    } else {
+      console.log('❌ No title provided or title is empty');
     }
   };
 

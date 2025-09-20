@@ -444,18 +444,37 @@ export const useFirebaseStore = create<FirebaseAppState>((set, get) => ({
   // CRUD operations
   createNode: async (kind: string, title: string, parentId?: string) => {
     const { repoId } = get();
+    console.log('🔄 createNode called with:', { kind, title, parentId, repoId });
+    
+    if (!repoId) {
+      const error = new Error('No repository ID found. Please make sure you are signed in and have a repository.');
+      console.error('❌ No repoId:', error);
+      throw error;
+    }
+    
     try {
-      await firebaseService.createStoryNode({
+      console.log('📡 Calling firebaseService.createStoryNode...');
+      const result = await firebaseService.createStoryNode({
         repo_id: repoId,
         kind,
         title,
         parent_id: parentId,
         order_idx: 0,
       });
-      // Wait for structure refresh to complete
+      console.log('✅ Firebase createStoryNode result:', result);
+      
+      console.log('🔄 Refreshing structure...');
       await get().refreshStructure();
+      console.log('✅ Structure refresh completed');
     } catch (error) {
       console.error("❌ Failed to create node:", error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorCode = (error as any)?.code || 'unknown';
+      console.error("❌ Error details:", {
+        message: errorMessage,
+        code: errorCode,
+        stack: error instanceof Error ? error.stack : undefined
+      });
       throw error; // Re-throw so UI can handle the error
     }
   },

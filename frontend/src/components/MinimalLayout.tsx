@@ -20,10 +20,19 @@ export default function MinimalLayout() {
 
   // Initialize store on mount
   useEffect(() => {
+    console.log('🔄 MinimalLayout useEffect triggered:', { user: user?.email, uid: user?.uid });
     if (user) {
-      initializeUserRepo(user.uid).then(() => {
-        refreshStructure();
+      console.log('👤 User found, initializing repository...');
+      initializeUserRepo(user.uid).then((repoId) => {
+        console.log('✅ Repository initialized with ID:', repoId);
+        refreshStructure().then(() => {
+          console.log('✅ Structure refreshed after repo initialization');
+        });
+      }).catch((error) => {
+        console.error('❌ Failed to initialize repository:', error);
       });
+    } else {
+      console.log('❌ No user found, skipping initialization');
     }
   }, [user, initializeUserRepo, refreshStructure]);
 
