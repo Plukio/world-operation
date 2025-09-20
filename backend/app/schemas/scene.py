@@ -1,14 +1,14 @@
 """Scene schemas."""
-from typing import Optional
+
 from pydantic import BaseModel
 
 
 class SceneBase(BaseModel):
     """Base scene schema."""
     text: str
-    title: Optional[str] = None
-    pov_entity_id: Optional[str] = None
-    location_entity_id: Optional[str] = None
+    title: str | None = None
+    pov_entity_id: str | None = None
+    location_entity_id: str | None = None
 
 
 class SceneCreate(SceneBase):
@@ -19,7 +19,7 @@ class SceneCreate(SceneBase):
 class Scene(SceneBase):
     """Scene response schema."""
     id: str
-    
+
     class Config:
         from_attributes = True
 

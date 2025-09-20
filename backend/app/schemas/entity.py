@@ -1,5 +1,5 @@
 """Entity schemas."""
-from typing import List, Optional
+
 from pydantic import BaseModel
 
 
@@ -7,8 +7,8 @@ class EntityBase(BaseModel):
     """Base entity schema."""
     type: str
     name: str
-    description: Optional[str] = None
-    aliases: List[str] = []
+    description: str | None = None
+    aliases: list[str] = []
 
 
 class EntityCreate(EntityBase):
@@ -19,6 +19,6 @@ class EntityCreate(EntityBase):
 class Entity(EntityBase):
     """Entity response schema."""
     id: str
-    
+
     class Config:
         from_attributes = True

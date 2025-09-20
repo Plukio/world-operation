@@ -2,7 +2,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from .api import extract, scenes, entities
+from .api import entities, extract, scenes
 
 app = FastAPI(
     title="World Operation API",

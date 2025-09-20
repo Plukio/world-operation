@@ -17,6 +17,6 @@ class RelationshipCreate(RelationshipBase):
 class Relationship(RelationshipBase):
     """Relationship response schema."""
     id: str
-    
+
     class Config:
         from_attributes = True

@@ -1,18 +1,18 @@
 """Entity extraction service."""
-from typing import Dict, List, Any
+from typing import Any
 
 from .llm_client import LLMClient
 
 
 class ExtractionService:
     """Service for extracting entities from text."""
-    
+
     def __init__(self):
         self.llm_client = LLMClient()
-    
-    def extract_entities(self, scene_text: str) -> Dict[str, List[Dict[str, Any]]]:
+
+    def extract_entities(self, scene_text: str) -> dict[str, list[dict[str, Any]]]:
         """Extract entities from scene text using OpenAI structured outputs."""
-        
+
         json_schema = {
             "type": "object",
             "properties": {
@@ -114,7 +114,7 @@ class ExtractionService:
                 }
             }
         }
-        
+
         messages = [
             {
                 "role": "system",
@@ -125,5 +125,5 @@ class ExtractionService:
                 "content": f"Extract entities from this scene text:\n\n{scene_text}"
             }
         ]
-        
+
         return self.llm_client.respond_json(messages, json_schema)
