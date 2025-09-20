@@ -47,11 +47,26 @@ export default function ModernStoryStructure({ onSceneSelect, onClearSelection, 
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
   const [editingItem, setEditingItem] = useState<{ id: string; type: 'node' | 'scene'; title: string } | null>(null);
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; item: StoryNode | Scene } | null>(null);
+  const [floatingActions, setFloatingActions] = useState<{ id: string; type: 'node' | 'scene'; x: number; y: number } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     loadData();
   }, []);
+
+  // Close floating actions when clicking outside
+  useEffect(() => {
+    const handleClickOutside = () => {
+      if (floatingActions) {
+        closeFloatingActions();
+      }
+    };
+
+    if (floatingActions) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [floatingActions]);
 
   const loadData = async () => {
     try {
@@ -195,6 +210,21 @@ export default function ModernStoryStructure({ onSceneSelect, onClearSelection, 
     setContextMenu({ x: e.clientX, y: e.clientY, item });
   };
 
+  const handleFloatingActions = (e: React.MouseEvent, item: StoryNode | Scene) => {
+    e.stopPropagation();
+    const rect = e.currentTarget.getBoundingClientRect();
+    setFloatingActions({ 
+      id: item.id, 
+      type: 'title' in item ? 'node' : 'scene', 
+      x: rect.right + 5, 
+      y: rect.top 
+    });
+  };
+
+  const closeFloatingActions = () => {
+    setFloatingActions(null);
+  };
+
   const getEpisodesForEpic = (epicId: string) => {
     return nodes.filter(node => node.parent_id === epicId && node.kind === 'episode');
   };
@@ -305,10 +335,7 @@ export default function ModernStoryStructure({ onSceneSelect, onClearSelection, 
                         <Plus className="w-3 h-3" />
                       </button>
                       <button
-                        onContextMenu={(e) => {
-                          e.stopPropagation();
-                          handleContextMenu(e, epic);
-                        }}
+                        onClick={(e) => handleFloatingActions(e, epic)}
                         className="opacity-0 group-hover:opacity-100 p-1 hover:bg-gray-200 dark:hover:bg-gray-600 rounded text-gray-500 hover:text-gray-700 dark:hover:text-gray-200 transition-opacity"
                       >
                         <MoreHorizontal className="w-3 h-3" />
@@ -360,10 +387,7 @@ export default function ModernStoryStructure({ onSceneSelect, onClearSelection, 
                                     <Plus className="w-3 h-3" />
                                   </button>
                                   <button
-                                    onContextMenu={(e) => {
-                                      e.stopPropagation();
-                                      handleContextMenu(e, episode);
-                                    }}
+                                    onClick={(e) => handleFloatingActions(e, episode)}
                                     className="opacity-0 group-hover:opacity-100 p-1 hover:bg-gray-200 dark:hover:bg-gray-600 rounded text-gray-500 hover:text-gray-700 dark:hover:text-gray-200 transition-opacity"
                                   >
                                     <MoreHorizontal className="w-3 h-3" />
@@ -378,7 +402,7 @@ export default function ModernStoryStructure({ onSceneSelect, onClearSelection, 
                                       .map(scene => (
                                         <div
                                           key={scene.id}
-                                          className={`flex items-center space-x-2 p-2 rounded-lg cursor-pointer transition-colors ${
+                                          className={`group flex items-center space-x-2 p-2 rounded-lg cursor-pointer transition-colors ${
                                             selectedSceneId === scene.id
                                               ? 'bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800'
                                               : 'hover:bg-gray-50 dark:hover:bg-gray-700'
@@ -393,6 +417,12 @@ export default function ModernStoryStructure({ onSceneSelect, onClearSelection, 
                                           <span className="flex-1 text-sm text-gray-600 dark:text-gray-400">
                                             {scene.title}
                                           </span>
+                                          <button
+                                            onClick={(e) => handleFloatingActions(e, scene)}
+                                            className="opacity-0 group-hover:opacity-100 p-1 hover:bg-gray-200 dark:hover:bg-gray-600 rounded text-gray-500 hover:text-gray-700 dark:hover:text-gray-200 transition-opacity"
+                                          >
+                                            <MoreHorizontal className="w-3 h-3" />
+                                          </button>
                                         </div>
                                       ))}
                                   </div>
@@ -436,6 +466,45 @@ export default function ModernStoryStructure({ onSceneSelect, onClearSelection, 
               setContextMenu(null);
             }}
             className="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 text-red-600 dark:text-red-400 flex items-center space-x-2"
+          >
+            <Trash2 className="w-3 h-3" />
+            <span>Delete</span>
+          </button>
+        </div>
+      )}
+
+      {/* Floating Actions */}
+      {floatingActions && (
+        <div
+          className="fixed z-50 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg py-1 flex"
+          style={{ left: floatingActions.x, top: floatingActions.y }}
+          onMouseLeave={closeFloatingActions}
+        >
+          <button
+            onClick={() => {
+              const item = floatingActions.type === 'node' 
+                ? nodes.find(n => n.id === floatingActions.id)
+                : scenes.find(s => s.id === floatingActions.id);
+              if (item) {
+                setEditingItem({
+                  id: item.id,
+                  type: floatingActions.type,
+                  title: item.title
+                });
+              }
+              closeFloatingActions();
+            }}
+            className="px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 flex items-center space-x-2 border-r border-gray-200 dark:border-gray-700"
+          >
+            <Edit3 className="w-3 h-3" />
+            <span>Rename</span>
+          </button>
+          <button
+            onClick={() => {
+              handleDeleteItem(floatingActions.id, floatingActions.type);
+              closeFloatingActions();
+            }}
+            className="px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 text-red-600 dark:text-red-400 flex items-center space-x-2"
           >
             <Trash2 className="w-3 h-3" />
             <span>Delete</span>
