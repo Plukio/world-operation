@@ -14,7 +14,10 @@ export default function MinimalSidebar({
   collapsed, 
   onToggleCollapse 
 }: MinimalSidebarProps) {
-  const { structure, createNode, updateNode, deleteNode, createScene, updateScene, deleteScene } = useFirebaseStore();
+  const { structure, createNode, updateNode, deleteNode, createScene, updateScene, deleteScene, repoId } = useFirebaseStore();
+  
+  // Debug logging for repoId
+  console.log('🔍 MinimalSidebar repoId:', repoId);
   const [editingItem, setEditingItem] = useState<{
     type: 'epic' | 'chapter' | 'scene';
     itemId: string;
@@ -100,6 +103,14 @@ export default function MinimalSidebar({
   };
 
   const epics = structure.nodes.filter(node => node.kind === 'epic');
+  
+  // Debug logging
+  console.log('🔍 MinimalSidebar render:', {
+    totalNodes: structure.nodes.length,
+    epics: epics.length,
+    allNodes: structure.nodes,
+    allScenes: structure.scenes.length
+  });
 
   if (collapsed) {
     return (

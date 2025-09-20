@@ -500,8 +500,12 @@ export const useFirebaseStore = create<FirebaseAppState>((set, get) => ({
       if (existingRepos.length > 0) {
         const repo = existingRepos[0];
         console.log('✅ Found existing repository:', repo);
-        set({ repoId: repo.id });
-        return repo.id || '';
+        if (repo.id) {
+          set({ repoId: repo.id });
+          return repo.id;
+        } else {
+          throw new Error('Repository found but has no ID');
+        }
       }
       
       // Create a new repository for the user
@@ -512,8 +516,12 @@ export const useFirebaseStore = create<FirebaseAppState>((set, get) => ({
       });
       
       console.log('✅ Created new repository:', newRepo);
-      set({ repoId: newRepo.id });
-      return newRepo.id || '';
+      if (newRepo.id) {
+        set({ repoId: newRepo.id });
+        return newRepo.id;
+      } else {
+        throw new Error('Repository created but has no ID');
+      }
     } catch (error) {
       console.error('❌ Failed to initialize user repository:', error);
       throw error;
