@@ -43,7 +43,7 @@ interface ModernEditorProps {
 export default function ModernEditor({
   value,
   onChange,
-  placeholder = "Start writing your story...",
+  placeholder = "The world is waiting for your brilliant story! Start writing...",
   onSave,
   isTypewriterMode = false,
   onTypewriterToggle,

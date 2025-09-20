@@ -45,6 +45,7 @@ export default function ModernStoryStructure({ onSceneSelect, onClearSelection, 
   const [scenes, setScenes] = useState<Scene[]>([]);
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
   const [editingItem, setEditingItem] = useState<{ id: string; type: 'node' | 'scene'; title: string } | null>(null);
+  const [inlineEditing, setInlineEditing] = useState<{ id: string; type: 'node' | 'scene'; title: string } | null>(null);
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; item: StoryNode | Scene } | null>(null);
   const [floatingActions, setFloatingActions] = useState<{ id: string; type: 'node' | 'scene'; x: number; y: number } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -284,6 +285,39 @@ export default function ModernStoryStructure({ onSceneSelect, onClearSelection, 
     setFloatingActions(null);
   };
 
+  const startInlineEdit = (item: StoryNode | Scene) => {
+    setInlineEditing({
+      id: item.id,
+      type: 'title' in item ? 'node' : 'scene',
+      title: item.title
+    });
+    closeFloatingActions();
+  };
+
+  const saveInlineEdit = async () => {
+    if (!inlineEditing) return;
+    
+    try {
+      await handleUpdateItem(inlineEditing.id, inlineEditing.type, inlineEditing.title);
+      setInlineEditing(null);
+    } catch (error) {
+      console.error('Error saving inline edit:', error);
+    }
+  };
+
+  const cancelInlineEdit = () => {
+    setInlineEditing(null);
+  };
+
+  const canDeleteItem = (id: string, type: 'node' | 'scene'): boolean => {
+    if (type === 'node') {
+      // Check if the node has any scenes
+      const hasScenes = scenes.some(scene => scene.node_id === id);
+      return !hasScenes;
+    }
+    return true; // Scenes can always be deleted
+  };
+
   // Close floating actions when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -382,9 +416,27 @@ export default function ModernStoryStructure({ onSceneSelect, onClearSelection, 
                         )}
                       </button>
                       <Crown className="w-4 h-4 text-yellow-500" />
-                      <span className="flex-1 text-sm font-medium text-gray-900 dark:text-white">
-                        {epic.title}
-                      </span>
+                      {inlineEditing && inlineEditing.id === epic.id && inlineEditing.type === 'node' ? (
+                        <input
+                          type="text"
+                          value={inlineEditing.title}
+                          onChange={(e) => setInlineEditing(prev => prev ? { ...prev, title: e.target.value } : null)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              saveInlineEdit();
+                            } else if (e.key === 'Escape') {
+                              cancelInlineEdit();
+                            }
+                          }}
+                          onBlur={saveInlineEdit}
+                          className="flex-1 text-sm font-medium text-gray-900 dark:text-white bg-transparent border-b border-blue-500 focus:outline-none"
+                          autoFocus
+                        />
+                      ) : (
+                        <span className="flex-1 text-sm font-medium text-gray-900 dark:text-white">
+                          {epic.title}
+                        </span>
+                      )}
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
@@ -436,9 +488,27 @@ export default function ModernStoryStructure({ onSceneSelect, onClearSelection, 
                                     )}
                                   </button>
                                   <BookMarked className="w-4 h-4 text-blue-500" />
-                                  <span className="flex-1 text-sm text-gray-700 dark:text-gray-300">
-                                    {episode.title}
-                                  </span>
+                                  {inlineEditing && inlineEditing.id === episode.id && inlineEditing.type === 'node' ? (
+                                    <input
+                                      type="text"
+                                      value={inlineEditing.title}
+                                      onChange={(e) => setInlineEditing(prev => prev ? { ...prev, title: e.target.value } : null)}
+                                      onKeyDown={(e) => {
+                                        if (e.key === 'Enter') {
+                                          saveInlineEdit();
+                                        } else if (e.key === 'Escape') {
+                                          cancelInlineEdit();
+                                        }
+                                      }}
+                                      onBlur={saveInlineEdit}
+                                      className="flex-1 text-sm text-gray-700 dark:text-gray-300 bg-transparent border-b border-blue-500 focus:outline-none"
+                                      autoFocus
+                                    />
+                                  ) : (
+                                    <span className="flex-1 text-sm text-gray-700 dark:text-gray-300">
+                                      {episode.title}
+                                    </span>
+                                  )}
                                   <button
                                     onClick={(e) => {
                                       e.stopPropagation();
@@ -479,9 +549,27 @@ export default function ModernStoryStructure({ onSceneSelect, onClearSelection, 
                                           }}
                                         >
                                           <ScrollText className="w-3 h-3 text-purple-500" />
-                                          <span className="flex-1 text-sm text-gray-600 dark:text-gray-400">
-                                            {scene.title}
-                                          </span>
+                                          {inlineEditing && inlineEditing.id === scene.id && inlineEditing.type === 'scene' ? (
+                                            <input
+                                              type="text"
+                                              value={inlineEditing.title}
+                                              onChange={(e) => setInlineEditing(prev => prev ? { ...prev, title: e.target.value } : null)}
+                                              onKeyDown={(e) => {
+                                                if (e.key === 'Enter') {
+                                                  saveInlineEdit();
+                                                } else if (e.key === 'Escape') {
+                                                  cancelInlineEdit();
+                                                }
+                                              }}
+                                              onBlur={saveInlineEdit}
+                                              className="flex-1 text-sm text-gray-600 dark:text-gray-400 bg-transparent border-b border-blue-500 focus:outline-none"
+                                              autoFocus
+                                            />
+                                          ) : (
+                                            <span className="flex-1 text-sm text-gray-600 dark:text-gray-400">
+                                              {scene.title}
+                                            </span>
+                                          )}
                                           <button
                                             onClick={(e) => handleFloatingActions(e, scene)}
                                             data-floating-trigger
@@ -554,14 +642,8 @@ export default function ModernStoryStructure({ onSceneSelect, onClearSelection, 
                 ? nodes.find(n => n.id === floatingActions.id)
                 : scenes.find(s => s.id === floatingActions.id);
               if (item) {
-                console.log('📝 Setting editing item:', item);
-                setEditingItem({
-                  id: item.id,
-                  type: floatingActions.type,
-                  title: item.title
-                });
+                startInlineEdit(item);
               }
-              closeFloatingActions();
             }}
             className="px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 flex items-center space-x-2 border-r border-gray-200 dark:border-gray-700"
           >
@@ -571,10 +653,19 @@ export default function ModernStoryStructure({ onSceneSelect, onClearSelection, 
           <button
             onClick={() => {
               console.log('🗑️ Delete button clicked for:', floatingActions);
-              handleDeleteItem(floatingActions.id, floatingActions.type);
+              if (canDeleteItem(floatingActions.id, floatingActions.type)) {
+                handleDeleteItem(floatingActions.id, floatingActions.type);
+              } else {
+                alert('Cannot delete this item because it contains scenes. Please delete all scenes first.');
+              }
               closeFloatingActions();
             }}
-            className="px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 text-red-600 dark:text-red-400 flex items-center space-x-2"
+            className={`px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center space-x-2 ${
+              canDeleteItem(floatingActions.id, floatingActions.type) 
+                ? 'text-red-600 dark:text-red-400' 
+                : 'text-gray-400 dark:text-gray-500 cursor-not-allowed'
+            }`}
+            disabled={!canDeleteItem(floatingActions.id, floatingActions.type)}
           >
             <Trash2 className="w-3 h-3" />
             <span>Delete</span>
