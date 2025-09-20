@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Header
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
@@ -22,14 +22,20 @@ class SceneUpdate(BaseModel):
     title: str
     order_idx: int = 0
 
+
 router = APIRouter()
 
 
 @router.get("/structure")
 def get_structure(
-    repo_id: str, db: Session = Depends(get_db), api_key: str = Depends(verify_api_key)
+    repo_id: str, 
+    db: Session = Depends(get_db), 
+    x_api_key: str = Header(..., alias="X-API-Key")
 ):
     """Get story nodes and scenes structure for a repository."""
+    
+    # Verify API key
+    verify_api_key(type("Credentials", (), {"credentials": x_api_key})())
 
     nodes = (
         db.query(StoryNode)
@@ -52,9 +58,12 @@ def get_structure(
 def create_node(
     node_data: StoryNodeCreate,
     db: Session = Depends(get_db),
-    api_key: str = Depends(verify_api_key),
+    x_api_key: str = Header(..., alias="X-API-Key"),
 ):
     """Create a new story node (Epic or Chapter)."""
+    
+    # Verify API key
+    verify_api_key(type("Credentials", (), {"credentials": x_api_key})())
 
     new_node = StoryNode(
         repo_id=node_data.repo_id,
@@ -76,9 +85,12 @@ def create_scene(
     chapter_id: str,
     scene_data: SceneCreate,
     db: Session = Depends(get_db),
-    api_key: str = Depends(verify_api_key),
+    x_api_key: str = Header(..., alias="X-API-Key"),
 ):
     """Create a new scene in a chapter."""
+    
+    # Verify API key
+    verify_api_key(type("Credentials", (), {"credentials": x_api_key})())
 
     # Verify chapter exists
     chapter = db.query(StoryNode).filter(StoryNode.id == chapter_id).first()
@@ -101,9 +113,12 @@ def update_node(
     node_id: str,
     node_data: StoryNodeUpdate,
     db: Session = Depends(get_db),
-    api_key: str = Depends(verify_api_key),
+    x_api_key: str = Header(..., alias="X-API-Key"),
 ):
     """Update a story node (Epic or Chapter)."""
+    
+    # Verify API key
+    verify_api_key(type("Credentials", (), {"credentials": x_api_key})())
 
     node = db.query(StoryNode).filter(StoryNode.id == node_id).first()
     if not node:
@@ -122,9 +137,12 @@ def update_node(
 def delete_node(
     node_id: str,
     db: Session = Depends(get_db),
-    api_key: str = Depends(verify_api_key),
+    x_api_key: str = Header(..., alias="X-API-Key"),
 ):
     """Delete a story node (Epic or Chapter)."""
+    
+    # Verify API key
+    verify_api_key(type("Credentials", (), {"credentials": x_api_key})())
 
     node = db.query(StoryNode).filter(StoryNode.id == node_id).first()
     if not node:
@@ -141,9 +159,12 @@ def update_scene(
     scene_id: str,
     scene_data: SceneUpdate,
     db: Session = Depends(get_db),
-    api_key: str = Depends(verify_api_key),
+    x_api_key: str = Header(..., alias="X-API-Key"),
 ):
     """Update a scene."""
+    
+    # Verify API key
+    verify_api_key(type("Credentials", (), {"credentials": x_api_key})())
 
     scene = db.query(Scene).filter(Scene.id == scene_id).first()
     if not scene:
@@ -162,9 +183,12 @@ def update_scene(
 def delete_scene(
     scene_id: str,
     db: Session = Depends(get_db),
-    api_key: str = Depends(verify_api_key),
+    x_api_key: str = Header(..., alias="X-API-Key"),
 ):
     """Delete a scene."""
+    
+    # Verify API key
+    verify_api_key(type("Credentials", (), {"credentials": x_api_key})())
 
     scene = db.query(Scene).filter(Scene.id == scene_id).first()
     if not scene:
