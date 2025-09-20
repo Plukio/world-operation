@@ -23,6 +23,7 @@ export default function ModernWritePage({ className = '' }: ModernWritePageProps
   const [selectedSceneId, setSelectedSceneId] = useState<string | null>(null);
   const [sceneContent, setSceneContent] = useState<string>('');
   const [isSaving, setIsSaving] = useState(false);
+  const [isLoadingContent, setIsLoadingContent] = useState(false);
   const [isTypewriterMode, setIsTypewriterMode] = useState(false);
   const [isFocusMode, setIsFocusMode] = useState(false);
   const [showRightPane, setShowRightPane] = useState(true);
@@ -47,6 +48,7 @@ export default function ModernWritePage({ className = '' }: ModernWritePageProps
   const handleSceneSelect = async (sceneId: string) => {
     console.log('Scene selected:', sceneId);
     setSelectedSceneId(sceneId);
+    setIsLoadingContent(true);
     
     try {
       const content = await sceneContentService.loadSceneContent(sceneId);
@@ -55,13 +57,16 @@ export default function ModernWritePage({ className = '' }: ModernWritePageProps
     } catch (error) {
       console.error('Error loading scene content:', error);
       setSceneContent('');
+    } finally {
+      setIsLoadingContent(false);
     }
   };
 
   const handleEditorChange = (html: string) => {
     setSceneContent(html);
     
-    if (selectedSceneId) {
+    // Only auto-save if we have a selected scene and the content has actually changed
+    if (selectedSceneId && html.trim().length > 0) {
       setIsSaving(true);
       sceneContentService.autoSaveSceneContent(selectedSceneId, html)
         .then(() => {
@@ -223,16 +228,25 @@ export default function ModernWritePage({ className = '' }: ModernWritePageProps
         {/* Editor */}
         <div className="flex-1">
           {selectedSceneId ? (
-            <ModernEditor
-              value={sceneContent}
-              onChange={handleEditorChange}
-              placeholder="Start writing your scene..."
-              onSave={handleSave}
-              isTypewriterMode={isTypewriterMode}
-              onTypewriterToggle={toggleTypewriterMode}
-              isFocusMode={isFocusMode}
-              onFocusToggle={toggleFocusMode}
-            />
+            isLoadingContent ? (
+              <div className="h-full flex items-center justify-center">
+                <div className="text-center">
+                  <div className="w-8 h-8 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-4"></div>
+                  <div className="text-gray-600 dark:text-gray-400 font-medium">Loading scene content...</div>
+                </div>
+              </div>
+            ) : (
+              <ModernEditor
+                value={sceneContent}
+                onChange={handleEditorChange}
+                placeholder="Start writing your scene..."
+                onSave={handleSave}
+                isTypewriterMode={isTypewriterMode}
+                onTypewriterToggle={toggleTypewriterMode}
+                isFocusMode={isFocusMode}
+                onFocusToggle={toggleFocusMode}
+              />
+            )
           ) : (
             <div className="h-full flex items-center justify-center">
               <div className="text-center max-w-md">

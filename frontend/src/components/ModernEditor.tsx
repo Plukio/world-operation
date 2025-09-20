@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Bold from '@tiptap/extension-bold';
@@ -60,7 +60,8 @@ export default function ModernEditor({
 }: ModernEditorProps) {
   // Use placeholder in editor configuration
   const editorPlaceholder = placeholder;
-  // const [isFullscreen, setIsFullscreen] = useState(false);
+  const isUpdatingFromProps = useRef(false);
+  const lastExternalValue = useRef(value);
 
   const editor = useEditor({
     extensions: [
@@ -94,7 +95,10 @@ export default function ModernEditor({
     ],
     content: value,
     onUpdate: ({ editor }) => {
-      onChange(editor.getHTML());
+      // Only call onChange if we're not updating from props
+      if (!isUpdatingFromProps.current) {
+        onChange(editor.getHTML());
+      }
     },
     editorProps: {
       attributes: {
@@ -107,8 +111,17 @@ export default function ModernEditor({
   });
 
   useEffect(() => {
-    if (editor && value !== editor.getHTML()) {
-      editor.commands.setContent(value);
+    if (editor && value !== lastExternalValue.current) {
+      // Only update content if the editor is not focused (to avoid interrupting typing)
+      if (!editor.isFocused) {
+        isUpdatingFromProps.current = true;
+        editor.commands.setContent(value);
+        lastExternalValue.current = value;
+        // Reset the flag after a short delay
+        setTimeout(() => {
+          isUpdatingFromProps.current = false;
+        }, 100);
+      }
     }
   }, [value, editor]);
 
