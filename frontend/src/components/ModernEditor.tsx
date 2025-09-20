@@ -76,7 +76,7 @@ export default function ModernEditor({
         },
       }),
     ],
-    content: value,
+    content: value || '<p></p>', // Ensure there's always a paragraph to type in
     onUpdate: ({ editor }) => {
       onChange(editor.getHTML());
     },
@@ -94,11 +94,20 @@ export default function ModernEditor({
     if (editor && value !== lastExternalValue.current) {
       // Only update content if the editor is not focused (to avoid interrupting typing)
       if (!editor.isFocused) {
-        editor.commands.setContent(value);
+        editor.commands.setContent(value || '<p></p>');
         lastExternalValue.current = value;
       }
     }
   }, [value, editor]);
+
+  // Ensure editor is ready to type when mounted
+  useEffect(() => {
+    if (editor && !value) {
+      // Set focus and ensure there's a paragraph to type in
+      editor.commands.setContent('<p></p>');
+      editor.commands.focus();
+    }
+  }, [editor, value]);
 
   // Cleanup editor on unmount
   useEffect(() => {
