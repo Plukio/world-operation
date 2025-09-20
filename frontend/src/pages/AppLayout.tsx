@@ -84,6 +84,19 @@ export default function AppLayout() {
             >
               Commits
             </NavLink>
+            
+            <NavLink
+              to="/crud"
+              className={({ isActive }) =>
+                `px-3 py-1 rounded text-sm transition-colors ${
+                  isActive 
+                    ? "bg-blue-100 text-blue-700" 
+                    : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+                }`
+              }
+            >
+              CRUD
+            </NavLink>
           </nav>
         </div>
       </header>
