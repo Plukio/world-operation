@@ -28,12 +28,12 @@ router = APIRouter()
 
 @router.get("/structure")
 def get_structure(
-    repo_id: str, 
-    db: Session = Depends(get_db), 
-    x_api_key: str = Header(..., alias="X-API-Key")
+    repo_id: str,
+    db: Session = Depends(get_db),
+    x_api_key: str = Header(..., alias="X-API-Key"),
 ):
     """Get story nodes and scenes structure for a repository."""
-    
+
     # Verify API key
     verify_api_key(type("Credentials", (), {"credentials": x_api_key})())
 
@@ -61,7 +61,7 @@ def create_node(
     x_api_key: str = Header(..., alias="X-API-Key"),
 ):
     """Create a new story node (Epic or Chapter)."""
-    
+
     # Verify API key
     verify_api_key(type("Credentials", (), {"credentials": x_api_key})())
 
@@ -88,7 +88,7 @@ def create_scene(
     x_api_key: str = Header(..., alias="X-API-Key"),
 ):
     """Create a new scene in a chapter."""
-    
+
     # Verify API key
     verify_api_key(type("Credentials", (), {"credentials": x_api_key})())
 
@@ -116,7 +116,7 @@ def update_node(
     x_api_key: str = Header(..., alias="X-API-Key"),
 ):
     """Update a story node (Epic or Chapter)."""
-    
+
     # Verify API key
     verify_api_key(type("Credentials", (), {"credentials": x_api_key})())
 
@@ -140,7 +140,7 @@ def delete_node(
     x_api_key: str = Header(..., alias="X-API-Key"),
 ):
     """Delete a story node (Epic or Chapter)."""
-    
+
     # Verify API key
     verify_api_key(type("Credentials", (), {"credentials": x_api_key})())
 
@@ -162,7 +162,7 @@ def update_scene(
     x_api_key: str = Header(..., alias="X-API-Key"),
 ):
     """Update a scene."""
-    
+
     # Verify API key
     verify_api_key(type("Credentials", (), {"credentials": x_api_key})())
 
@@ -186,7 +186,7 @@ def delete_scene(
     x_api_key: str = Header(..., alias="X-API-Key"),
 ):
     """Delete a scene."""
-    
+
     # Verify API key
     verify_api_key(type("Credentials", (), {"credentials": x_api_key})())
 

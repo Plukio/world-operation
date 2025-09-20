@@ -10,7 +10,9 @@ from .api import (
     entities,
     episodes,
     extract,
-    muse,
+    provenance,
+    relationships,
+    repositories,
     scenes,
     sentiment,
     versions,
@@ -35,11 +37,13 @@ app.add_middleware(
 app.include_router(extract.router, prefix="/api", tags=["extract"])
 app.include_router(scenes.router, prefix="/api", tags=["scenes"])
 app.include_router(entities.router, prefix="/api", tags=["entities"])
+app.include_router(relationships.router, prefix="/api", tags=["relationships"])
+app.include_router(provenance.router, prefix="/api", tags=["provenance"])
+app.include_router(repositories.router, prefix="/api", tags=["repositories"])
 app.include_router(branches.router, prefix="/api", tags=["branches"])
 app.include_router(commits.router, prefix="/api", tags=["commits"])
 app.include_router(versions.router, prefix="/api", tags=["versions"])
 app.include_router(diff.router, prefix="/api", tags=["diff"])
-app.include_router(muse.router, prefix="/api", tags=["muse"])
 app.include_router(episodes.router, prefix="/api", tags=["episodes"])
 app.include_router(sentiment.router, prefix="/api", tags=["sentiment"])
 

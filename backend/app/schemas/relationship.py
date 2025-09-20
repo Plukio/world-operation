@@ -17,6 +17,12 @@ class RelationshipCreate(RelationshipBase):
     pass
 
 
+class RelationshipUpdate(RelationshipBase):
+    """Relationship update schema."""
+
+    pass
+
+
 class Relationship(RelationshipBase):
     """Relationship response schema."""
 

@@ -18,6 +18,12 @@ class EntityCreate(EntityBase):
     pass
 
 
+class EntityUpdate(EntityBase):
+    """Entity update schema."""
+
+    pass
+
+
 class Entity(EntityBase):
     """Entity response schema."""
 

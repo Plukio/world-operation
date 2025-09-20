@@ -13,6 +13,10 @@ class RepositoryCreate(RepositoryBase):
     pass
 
 
+class RepositoryUpdate(RepositoryBase):
+    pass
+
+
 class Repository(RepositoryBase):
     id: UUID
     created_at: datetime
