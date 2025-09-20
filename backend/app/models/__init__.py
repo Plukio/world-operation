@@ -3,6 +3,6 @@
 from .entity import Entity
 from .provenance import EntityProvenance
 from .relationship import Relationship
-from .scene import Scene
+from .story import StoryNode, Scene, SceneBranchLatest
 
-__all__ = ["Entity", "Scene", "Relationship", "EntityProvenance"]
+__all__ = ["Entity", "Scene", "Relationship", "EntityProvenance", "StoryNode", "SceneBranchLatest"]

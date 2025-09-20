@@ -19,8 +19,8 @@ class Repository(Base):
     branches = relationship(
         "Branch", back_populates="repository", cascade="all, delete-orphan"
     )
-    episodes = relationship(
-        "Episode", back_populates="repository", cascade="all, delete-orphan"
+    story_nodes = relationship(
+        "StoryNode", back_populates="repository", cascade="all, delete-orphan"
     )
     commits = relationship(
         "Commit", back_populates="repository", cascade="all, delete-orphan"
@@ -62,42 +62,6 @@ class Branch(Base):
     )
 
 
-class Episode(Base):
-    __tablename__ = "episodes"
-
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    repo_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey("repositories.id", ondelete="CASCADE"),
-        nullable=False,
-    )
-    title = Column(String, nullable=False)
-    order_idx = Column(Integer, default=0)
-
-    # Relationships
-    repository = relationship("Repository", back_populates="episodes")
-    scenes = relationship(
-        "Scene", back_populates="episode", cascade="all, delete-orphan"
-    )
-
-
-class Scene(Base):
-    __tablename__ = "scenes"
-
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    episode_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey("episodes.id", ondelete="CASCADE"),
-        nullable=False,
-    )
-    title = Column(String, nullable=False)
-    order_idx = Column(Integer, default=0)
-
-    # Relationships
-    episode = relationship("Episode", back_populates="scenes")
-    versions = relationship(
-        "SceneVersion", back_populates="scene", cascade="all, delete-orphan"
-    )
 
 
 class SceneVersion(Base):

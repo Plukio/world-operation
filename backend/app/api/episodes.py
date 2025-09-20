@@ -1,75 +1,86 @@
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from typing import List
 
 from app.core.db import get_db
 from app.core.security import verify_api_key
-from app.models.repository import Episode, Scene
-from app.schemas.repository import EpisodeCreate, Episode as EpisodeSchema, SceneCreate, Scene as SceneSchema
+from app.models.story import StoryNode, Scene
+from app.schemas.story import (
+    StoryNode as StoryNodeSchema,
+    StoryNodeCreate,
+    Scene as SceneSchema,
+    SceneCreate,
+)
 
 router = APIRouter()
 
 
-@router.get("/episodes/structure")
+@router.get("/structure")
 def get_structure(
-    repo_id: str,
-    db: Session = Depends(get_db),
-    api_key: str = Depends(verify_api_key)
+    repo_id: str, db: Session = Depends(get_db), api_key: str = Depends(verify_api_key)
 ):
-    """Get episodes and scenes structure for a repository."""
-    
-    episodes = db.query(Episode).filter(Episode.repo_id == repo_id).order_by(Episode.order_idx).all()
-    scenes = db.query(Scene).join(Episode).filter(Episode.repo_id == repo_id).order_by(Scene.order_idx).all()
-    
-    return {
-        "episodes": episodes,
-        "scenes": scenes
-    }
+    """Get story nodes and scenes structure for a repository."""
 
-
-@router.post("/episodes", response_model=EpisodeSchema)
-def create_episode(
-    episode_data: EpisodeCreate,
-    db: Session = Depends(get_db),
-    api_key: str = Depends(verify_api_key)
-):
-    """Create a new episode."""
-    
-    new_episode = Episode(
-        repo_id=episode_data.repo_id,
-        title=episode_data.title,
-        order_idx=episode_data.order_idx
+    nodes = (
+        db.query(StoryNode)
+        .filter(StoryNode.repo_id == repo_id)
+        .order_by(StoryNode.order_idx)
+        .all()
     )
-    
-    db.add(new_episode)
+    scenes = (
+        db.query(Scene)
+        .join(StoryNode)
+        .filter(StoryNode.repo_id == repo_id)
+        .order_by(Scene.order_idx)
+        .all()
+    )
+
+    return {"nodes": nodes, "scenes": scenes}
+
+
+@router.post("/nodes", response_model=StoryNodeSchema)
+def create_node(
+    node_data: StoryNodeCreate,
+    db: Session = Depends(get_db),
+    api_key: str = Depends(verify_api_key),
+):
+    """Create a new story node (Epic or Chapter)."""
+
+    new_node = StoryNode(
+        repo_id=node_data.repo_id,
+        kind=node_data.kind,
+        title=node_data.title,
+        parent_id=node_data.parent_id,
+        order_idx=node_data.order_idx,
+    )
+
+    db.add(new_node)
     db.commit()
-    db.refresh(new_episode)
-    
-    return new_episode
+    db.refresh(new_node)
+
+    return new_node
 
 
-@router.post("/episodes/{episode_id}/scenes", response_model=SceneSchema)
+@router.post("/nodes/{chapter_id}/scenes", response_model=SceneSchema)
 def create_scene(
-    episode_id: str,
+    chapter_id: str,
     scene_data: SceneCreate,
     db: Session = Depends(get_db),
-    api_key: str = Depends(verify_api_key)
+    api_key: str = Depends(verify_api_key),
 ):
-    """Create a new scene in an episode."""
-    
-    # Verify episode exists
-    episode = db.query(Episode).filter(Episode.id == episode_id).first()
-    if not episode:
-        raise HTTPException(status_code=404, detail="Episode not found")
-    
+    """Create a new scene in a chapter."""
+
+    # Verify chapter exists
+    chapter = db.query(StoryNode).filter(StoryNode.id == chapter_id).first()
+    if not chapter:
+        raise HTTPException(status_code=404, detail="Chapter not found")
+
     new_scene = Scene(
-        episode_id=episode_id,
-        title=scene_data.title,
-        order_idx=scene_data.order_idx
+        node_id=chapter_id, title=scene_data.title, order_idx=scene_data.order_idx
     )
-    
+
     db.add(new_scene)
     db.commit()
     db.refresh(new_scene)
-    
+
     return new_scene

@@ -1,7 +1,7 @@
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
-from typing import List
+
+from fastapi import APIRouter, Depends
 from pydantic import BaseModel
+from sqlalchemy.orm import Session
 
 from app.core.db import get_db
 from app.core.security import verify_api_key
@@ -16,15 +16,15 @@ class SentimentPoint(BaseModel):
     created_at: str
 
 
-@router.get("/sentiment/series", response_model=List[SentimentPoint])
+@router.get("/sentiment/series", response_model=list[SentimentPoint])
 def get_sentiment_series(
     scene_id: str,
     branch_id: str,
     db: Session = Depends(get_db),
-    api_key: str = Depends(verify_api_key)
+    api_key: str = Depends(verify_api_key),
 ):
     """Get sentiment series for a scene across all versions."""
-    
+
     versions = (
         db.query(SceneVersion)
         .filter(SceneVersion.scene_id == scene_id)
@@ -32,14 +32,16 @@ def get_sentiment_series(
         .order_by(SceneVersion.created_at.asc())
         .all()
     )
-    
+
     sentiment_points = []
     for version in versions:
         sentiment = version.meta.get("sentiment", 0.0) if version.meta else 0.0
-        sentiment_points.append(SentimentPoint(
-            version_id=str(version.id),
-            score=sentiment,
-            created_at=version.created_at.isoformat()
-        ))
-    
+        sentiment_points.append(
+            SentimentPoint(
+                version_id=str(version.id),
+                score=sentiment,
+                created_at=version.created_at.isoformat(),
+            )
+        )
+
     return sentiment_points

@@ -3,7 +3,18 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from .api import branches, commits, diff, entities, extract, muse, scenes, versions, episodes, sentiment
+from .api import (
+    branches,
+    commits,
+    diff,
+    entities,
+    episodes,
+    extract,
+    muse,
+    scenes,
+    sentiment,
+    versions,
+)
 
 app = FastAPI(
     title="World Operation API",
