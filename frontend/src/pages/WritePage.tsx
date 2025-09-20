@@ -5,13 +5,14 @@ import PRModal from "../components/PRModal";
 import CreateEditModal from "../components/CreateEditModal";
 import ContextMenu from "../components/ContextMenu";
 import InlineEdit from "../components/InlineEdit";
-import { useAppStore } from "../store/useAppStore";
+import { useFirebaseStore } from "../store/useFirebaseStore";
 import { api } from "../lib/api";
 
 export default function WritePage() {
   const [activeTab, setActiveTab] = useState<"episode" | "scene">("episode");
   const [extracting, setExtracting] = useState(false);
   const [loadingScene, setLoadingScene] = useState(false);
+  const [refreshingContent, setRefreshingContent] = useState(false);
   const [showPRModal, setShowPRModal] = useState(false);
   
   // CRUD modal states
@@ -58,13 +59,14 @@ export default function WritePage() {
     setCurrentScene,
     setEditorHtml,
     refreshStructure,
+    refreshCurrentScene,
     createNode,
     updateNode,
     deleteNode,
     createScene,
     updateScene,
     deleteScene,
-  } = useAppStore();
+  } = useFirebaseStore();
 
   // Mock branches for now
   const [branches] = useState([
@@ -388,7 +390,9 @@ export default function WritePage() {
             </div>
             {current.sceneId && (
               <div className="text-xs text-gray-500">
-                {editor.autoSaving ? (
+                {refreshingContent ? (
+                  <span className="text-purple-600">🔄 Refreshing content...</span>
+                ) : editor.autoSaving ? (
                   <span className="text-blue-600">⏳ Auto-saving...</span>
                 ) : editor.dirty ? (
                   <span className="text-orange-600">• Unsaved changes</span>
@@ -431,6 +435,33 @@ export default function WritePage() {
               disabled={extracting}
             >
               {extracting ? "Extracting…" : "Extract Entities"}
+            </button>
+            <button 
+              className="px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+              onClick={() => {
+                console.log('🔧 Manual save triggered');
+                // Trigger auto-save immediately
+                const { autoSave } = useFirebaseStore.getState();
+                autoSave();
+              }}
+              disabled={!editor.dirty || editor.autoSaving}
+            >
+              {editor.autoSaving ? "Saving..." : "Save Now"}
+            </button>
+            <button 
+              className="px-3 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
+              onClick={async () => {
+                console.log('🔄 Manual refresh triggered');
+                setRefreshingContent(true);
+                try {
+                  await refreshCurrentScene();
+                } finally {
+                  setRefreshingContent(false);
+                }
+              }}
+              disabled={refreshingContent}
+            >
+              {refreshingContent ? "Refreshing..." : "Refresh Content"}
             </button>
             <button className="px-3 py-2 border rounded">Open Composer</button>
           </div>

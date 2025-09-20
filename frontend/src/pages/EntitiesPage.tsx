@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
+import { useFirebaseStore } from "../store/useFirebaseStore";
 
 type Kind = "character" | "place" | "event" | "object" | "relationship";
 
@@ -19,6 +20,15 @@ const SAMPLE = {
 
 export default function EntitiesPage() {
   const [tab, setTab] = useState<Kind>("character");
+  
+  // Firebase store
+  const { entities, relationships, getEntities, getRelationships } = useFirebaseStore();
+  
+  // Load data on mount
+  useEffect(() => {
+    getEntities();
+    getRelationships();
+  }, [getEntities, getRelationships]);
   const [q, setQ] = useState("");
   const list = useMemo(() => {
     const map: any = {

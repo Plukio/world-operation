@@ -1,6 +1,6 @@
 import { create } from "zustand";
-import { api } from "../lib/api";
 import { firebaseAutoSave } from "../lib/firebaseAutosave";
+import { firebaseService } from "../lib/firebaseService";
 
 export interface StoryNode {
   id: string;
@@ -65,6 +65,7 @@ interface AppState {
   saveVersion: (message?: string) => Promise<string | null>;
   autoSave: () => Promise<void>;
   clearDirty: () => void;
+  refreshCurrentScene: () => Promise<void>;
   
   // CRUD operations
   createNode: (kind: string, title: string, parentId?: string) => Promise<void>;
@@ -124,6 +125,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   setEditorHtml: (html: string) => {
+    console.log('📝 Editor content changed, length:', html.length);
     set((state) => ({
       editor: {
         ...state.editor,
@@ -135,10 +137,13 @@ export const useAppStore = create<AppState>((set, get) => ({
     // Clear existing auto-save timeout
     if ((window as any).autoSaveTimeout) {
       clearTimeout((window as any).autoSaveTimeout);
+      console.log('⏰ Cleared existing auto-save timeout');
     }
 
     // Set new auto-save timeout (2 seconds debounce)
+    console.log('⏰ Setting auto-save timeout (2 seconds)');
     (window as any).autoSaveTimeout = setTimeout(() => {
+      console.log('⏰ Auto-save timeout triggered, calling autoSave()');
       get().autoSave();
     }, 2000);
   },
@@ -196,7 +201,36 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   loadLatestVersion: async (sceneId: string, branchId: string) => {
+    console.log('📖 Loading latest version for scene:', { sceneId, branchId });
+    
     try {
+      // Try Firebase first
+      const firebaseContent = await firebaseAutoSave.loadScene(sceneId, branchId);
+      
+      if (firebaseContent) {
+        console.log('✅ Loaded content from Firebase/localStorage:', { 
+          contentLength: firebaseContent.contentHtml?.length || 0,
+          lastModified: firebaseContent.lastModified 
+        });
+        
+        set((state) => ({
+          current: {
+            ...state.current,
+            versionId: firebaseContent.id,
+          },
+          editor: {
+            html: firebaseContent.contentHtml || "<p>Start writing your story here...</p>",
+            dirty: false,
+            parentVersionId: firebaseContent.id,
+            autoSaving: false,
+            lastSaved: firebaseContent.lastModified,
+          },
+        }));
+        return;
+      }
+      
+      // Fallback: Try backend API
+      console.log('📭 No Firebase content, trying backend API...');
       const response = await api.get(
         `/versions/latest?scene_id=${sceneId}&branch_id=${branchId}`,
       );
@@ -208,8 +242,7 @@ export const useAppStore = create<AppState>((set, get) => ({
           versionId: version.id,
         },
         editor: {
-          html:
-            version.content_html || "<p>Start writing your story here...</p>",
+          html: version.content_html || "<p>Start writing your story here...</p>",
           dirty: false,
           parentVersionId: version.id,
           autoSaving: false,
@@ -217,16 +250,16 @@ export const useAppStore = create<AppState>((set, get) => ({
         },
       }));
     } catch (error) {
-      console.error("Failed to load latest version:", error);
+      console.error("❌ Failed to load latest version:", error);
       // Set empty content if no version exists
       set(() => ({
-  editor: {
-    html: "<p>Start writing your story here...</p>",
-    dirty: false,
-    parentVersionId: undefined,
-    autoSaving: false,
-    lastSaved: null,
-  },
+        editor: {
+          html: "<p>Start writing your story here...</p>",
+          dirty: false,
+          parentVersionId: undefined,
+          autoSaving: false,
+          lastSaved: null,
+        },
       }));
     }
   },
@@ -291,8 +324,20 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   autoSave: async () => {
     const { current, branch, editor } = get();
+    console.log('🔄 Auto-save function called:', { 
+      sceneId: current.sceneId, 
+      branchId: branch?.id, 
+      dirty: editor.dirty, 
+      autoSaving: editor.autoSaving 
+    });
 
     if (!current.sceneId || !branch || !editor.dirty || editor.autoSaving) {
+      console.log('❌ Auto-save skipped:', { 
+        noSceneId: !current.sceneId, 
+        noBranch: !branch, 
+        notDirty: !editor.dirty, 
+        alreadySaving: editor.autoSaving 
+      });
       return;
     }
 
@@ -357,6 +402,14 @@ export const useAppStore = create<AppState>((set, get) => ({
         dirty: false,
       },
     }));
+  },
+
+  refreshCurrentScene: async () => {
+    const { current, branch } = get();
+    if (current.sceneId && branch) {
+      console.log('🔄 Refreshing current scene content...');
+      await get().loadLatestVersion(current.sceneId, branch.id);
+    }
   },
 
   // CRUD operations
