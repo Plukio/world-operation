@@ -8,7 +8,9 @@ import {
   Save,
   Sparkles,
   Edit3,
-  Trash2
+  Trash2,
+  PanelLeft,
+  PanelRight
 } from 'lucide-react';
 import ModernStoryStructure from './ModernStoryStructure';
 import ModernEditor from './ModernEditor';
@@ -802,6 +804,27 @@ export default function ModernWritePage({ className = '' }: ModernWritePageProps
             </div>
           </div>
         </div>
+      )}
+
+      {/* Floating Toggle Buttons */}
+      {!showLeftPane && (
+        <button
+          onClick={() => setShowLeftPane(true)}
+          className="fixed left-4 top-1/2 transform -translate-y-1/2 z-40 p-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors group"
+          title="Show Story Structure"
+        >
+          <PanelLeft className="w-5 h-5 text-gray-600 dark:text-gray-400 group-hover:text-blue-600 dark:group-hover:text-blue-400" />
+        </button>
+      )}
+
+      {!showRightPane && selectedSceneId && (
+        <button
+          onClick={() => setShowRightPane(true)}
+          className="fixed right-4 top-1/2 transform -translate-y-1/2 z-40 p-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors group"
+          title="Show Entities Panel"
+        >
+          <PanelRight className="w-5 h-5 text-gray-600 dark:text-gray-400 group-hover:text-purple-600 dark:group-hover:text-purple-400" />
+        </button>
       )}
     </div>
   );
