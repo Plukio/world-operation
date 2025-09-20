@@ -15,15 +15,27 @@ export default function GitSidebar({ onSceneSelect, currentSceneId }: GitSidebar
     currentTitle: string;
   } | null>(null);
 
-  const handleCreate = (type: 'epic' | 'chapter' | 'scene', parentId?: string) => {
+  console.log('🔄 GitSidebar: Rendering with structure:', { 
+    nodesCount: structure.nodes.length, 
+    scenesCount: structure.scenes.length,
+    currentSceneId 
+  });
+
+  const handleCreate = async (type: 'epic' | 'chapter' | 'scene', parentId?: string) => {
     const title = prompt(`Enter ${type} name:`);
     if (title) {
-      if (type === 'epic') {
-        createNode('epic', title);
-      } else if (type === 'chapter' && parentId) {
-        createNode('chapter', title, parentId);
-      } else if (type === 'scene' && parentId) {
-        createScene(parentId, title);
+      console.log('🔄 GitSidebar: Creating', type, 'with title:', title, 'parentId:', parentId);
+      try {
+        if (type === 'epic') {
+          await createNode('epic', title);
+        } else if (type === 'chapter' && parentId) {
+          await createNode('chapter', title, parentId);
+        } else if (type === 'scene' && parentId) {
+          await createScene(parentId, title);
+        }
+        console.log('✅ GitSidebar: Successfully created', type);
+      } catch (error) {
+        console.error('❌ GitSidebar: Failed to create', type, error);
       }
     }
   };

@@ -6,7 +6,14 @@ import PRModal from './PRModal';
 import { useFirebaseStore } from '../store/useFirebaseStore';
 
 export default function GitLayout() {
-  const { structure, branch, setBranch, refreshStructure } = useFirebaseStore();
+  const { 
+    structure, 
+    branch, 
+    setBranch, 
+    refreshStructure, 
+    setCurrentScene,
+    loadLatestVersion 
+  } = useFirebaseStore();
   const [currentSceneId, setCurrentSceneId] = useState<string>('');
   const [showPRModal, setShowPRModal] = useState(false);
   
@@ -18,20 +25,27 @@ export default function GitLayout() {
 
   // Initialize store on mount
   useEffect(() => {
-    if (structure.nodes.length === 0) {
-      refreshStructure();
-    }
-  }, [structure.nodes.length, refreshStructure]);
+    console.log('🔄 GitLayout: Initializing store...');
+    refreshStructure();
+  }, [refreshStructure]);
 
   // Set default branch
   useEffect(() => {
     if (!branch && branches.length > 0) {
+      console.log('🔄 GitLayout: Setting default branch:', branches[0]);
       setBranch(branches[0]);
     }
   }, [branch, branches, setBranch]);
 
-  const handleSceneSelect = (sceneId: string) => {
+  const handleSceneSelect = async (sceneId: string) => {
+    console.log('🔄 GitLayout: Selecting scene:', sceneId);
     setCurrentSceneId(sceneId);
+    
+    // Set current scene in store and load content
+    if (branch?.id) {
+      await setCurrentScene(sceneId);
+      await loadLatestVersion(sceneId, branch.id);
+    }
   };
 
   const handleBranchChange = (branchId: string) => {

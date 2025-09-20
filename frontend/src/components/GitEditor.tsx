@@ -11,6 +11,8 @@ export default function GitEditor({ currentSceneId, currentSceneTitle }: GitEdit
   const { editor, setEditorHtml, autoSave, refreshCurrentScene } = useFirebaseStore();
   const [refreshingContent, setRefreshingContent] = useState(false);
 
+  console.log('🔄 GitEditor: Rendering with scene:', { currentSceneId, currentSceneTitle, editorHtml: editor.html });
+
   const handleSave = async () => {
     console.log('🔧 Manual save triggered');
     await autoSave();
