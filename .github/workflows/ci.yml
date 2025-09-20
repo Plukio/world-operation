@@ -75,6 +75,8 @@ jobs:
 
       - name: Install frontend dependencies
         run: |
+          ls -la
+          ls -la frontend/
           cd frontend
           pnpm install --frozen-lockfile
 
@@ -114,6 +116,8 @@ jobs:
 
       - name: Install dependencies
         run: |
+          ls -la
+          ls -la frontend/
           cd frontend
           pnpm install --frozen-lockfile
 
