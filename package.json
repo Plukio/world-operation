@@ -1,0 +1,16 @@
+{
+  "name": "world-operation",
+  "version": "0.1.0",
+  "description": "Git for Fiction - A modern writing platform with version control",
+  "scripts": {
+    "build": "cd frontend && pnpm run build",
+    "deploy": "npm run build && firebase deploy --only hosting",
+    "deploy:preview": "npm run build && firebase hosting:channel:deploy preview",
+    "dev": "cd frontend && pnpm run dev",
+    "install:frontend": "cd frontend && pnpm install",
+    "install:backend": "cd backend && uv sync"
+  },
+  "keywords": ["fiction", "writing", "version-control", "firebase", "react"],
+  "author": "World Operation Team",
+  "license": "MIT"
+}
