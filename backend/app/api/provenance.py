@@ -12,6 +12,7 @@ from pydantic import BaseModel
 
 class EntityProvenanceBase(BaseModel):
     """Base entity provenance schema."""
+
     entity_id: str
     scene_id: str
     start_idx: int
@@ -21,16 +22,19 @@ class EntityProvenanceBase(BaseModel):
 
 class EntityProvenanceCreate(EntityProvenanceBase):
     """Entity provenance creation schema."""
+
     pass
 
 
 class EntityProvenanceUpdate(EntityProvenanceBase):
     """Entity provenance update schema."""
+
     pass
 
 
 class EntityProvenance(EntityProvenanceBase):
     """Entity provenance response schema."""
+
     id: str
 
     class Config:
@@ -48,7 +52,7 @@ def get_provenance(
     """Get all entity provenance records."""
     # Verify API key
     verify_api_key(type("Credentials", (), {"credentials": x_api_key})())
-    
+
     provenance = db.query(EntityProvenance).all()
     return provenance
 
@@ -62,8 +66,10 @@ def get_provenance_record(
     """Get a specific provenance record by ID."""
     # Verify API key
     verify_api_key(type("Credentials", (), {"credentials": x_api_key})())
-    
-    provenance = db.query(EntityProvenance).filter(EntityProvenance.id == provenance_id).first()
+
+    provenance = (
+        db.query(EntityProvenance).filter(EntityProvenance.id == provenance_id).first()
+    )
     if not provenance:
         raise HTTPException(status_code=404, detail="Provenance record not found")
     return provenance
@@ -78,7 +84,7 @@ def create_provenance(
     """Create a new provenance record."""
     # Verify API key
     verify_api_key(type("Credentials", (), {"credentials": x_api_key})())
-    
+
     new_provenance = EntityProvenance(
         entity_id=provenance_data.entity_id,
         scene_id=provenance_data.scene_id,
@@ -86,11 +92,11 @@ def create_provenance(
         end_idx=provenance_data.end_idx,
         confidence=provenance_data.confidence,
     )
-    
+
     db.add(new_provenance)
     db.commit()
     db.refresh(new_provenance)
-    
+
     return new_provenance
 
 
@@ -104,20 +110,22 @@ def update_provenance(
     """Update a provenance record."""
     # Verify API key
     verify_api_key(type("Credentials", (), {"credentials": x_api_key})())
-    
-    provenance = db.query(EntityProvenance).filter(EntityProvenance.id == provenance_id).first()
+
+    provenance = (
+        db.query(EntityProvenance).filter(EntityProvenance.id == provenance_id).first()
+    )
     if not provenance:
         raise HTTPException(status_code=404, detail="Provenance record not found")
-    
+
     provenance.entity_id = provenance_data.entity_id
     provenance.scene_id = provenance_data.scene_id
     provenance.start_idx = provenance_data.start_idx
     provenance.end_idx = provenance_data.end_idx
     provenance.confidence = provenance_data.confidence
-    
+
     db.commit()
     db.refresh(provenance)
-    
+
     return provenance
 
 
@@ -130,12 +138,14 @@ def delete_provenance(
     """Delete a provenance record."""
     # Verify API key
     verify_api_key(type("Credentials", (), {"credentials": x_api_key})())
-    
-    provenance = db.query(EntityProvenance).filter(EntityProvenance.id == provenance_id).first()
+
+    provenance = (
+        db.query(EntityProvenance).filter(EntityProvenance.id == provenance_id).first()
+    )
     if not provenance:
         raise HTTPException(status_code=404, detail="Provenance record not found")
-    
+
     db.delete(provenance)
     db.commit()
-    
+
     return {"message": "Provenance record deleted successfully"}

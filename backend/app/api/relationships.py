@@ -24,7 +24,7 @@ def get_relationships(
     """Get all relationships."""
     # Verify API key
     verify_api_key(type("Credentials", (), {"credentials": x_api_key})())
-    
+
     relationships = db.query(Relationship).all()
     return relationships
 
@@ -38,8 +38,10 @@ def get_relationship(
     """Get a specific relationship by ID."""
     # Verify API key
     verify_api_key(type("Credentials", (), {"credentials": x_api_key})())
-    
-    relationship = db.query(Relationship).filter(Relationship.id == relationship_id).first()
+
+    relationship = (
+        db.query(Relationship).filter(Relationship.id == relationship_id).first()
+    )
     if not relationship:
         raise HTTPException(status_code=404, detail="Relationship not found")
     return relationship
@@ -54,17 +56,17 @@ def create_relationship(
     """Create a new relationship."""
     # Verify API key
     verify_api_key(type("Credentials", (), {"credentials": x_api_key})())
-    
+
     new_relationship = Relationship(
         source_entity_id=relationship_data.source_entity_id,
         target_entity_id=relationship_data.target_entity_id,
         relation_type=relationship_data.relation_type,
     )
-    
+
     db.add(new_relationship)
     db.commit()
     db.refresh(new_relationship)
-    
+
     return new_relationship
 
 
@@ -78,18 +80,20 @@ def update_relationship(
     """Update a relationship."""
     # Verify API key
     verify_api_key(type("Credentials", (), {"credentials": x_api_key})())
-    
-    relationship = db.query(Relationship).filter(Relationship.id == relationship_id).first()
+
+    relationship = (
+        db.query(Relationship).filter(Relationship.id == relationship_id).first()
+    )
     if not relationship:
         raise HTTPException(status_code=404, detail="Relationship not found")
-    
+
     relationship.source_entity_id = relationship_data.source_entity_id
     relationship.target_entity_id = relationship_data.target_entity_id
     relationship.relation_type = relationship_data.relation_type
-    
+
     db.commit()
     db.refresh(relationship)
-    
+
     return relationship
 
 
@@ -102,12 +106,14 @@ def delete_relationship(
     """Delete a relationship."""
     # Verify API key
     verify_api_key(type("Credentials", (), {"credentials": x_api_key})())
-    
-    relationship = db.query(Relationship).filter(Relationship.id == relationship_id).first()
+
+    relationship = (
+        db.query(Relationship).filter(Relationship.id == relationship_id).first()
+    )
     if not relationship:
         raise HTTPException(status_code=404, detail="Relationship not found")
-    
+
     db.delete(relationship)
     db.commit()
-    
+
     return {"message": "Relationship deleted successfully"}

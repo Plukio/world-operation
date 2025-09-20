@@ -24,7 +24,7 @@ def get_repositories(
     """Get all repositories."""
     # Verify API key
     verify_api_key(type("Credentials", (), {"credentials": x_api_key})())
-    
+
     repositories = db.query(Repository).all()
     return repositories
 
@@ -38,7 +38,7 @@ def get_repository(
     """Get a specific repository by ID."""
     # Verify API key
     verify_api_key(type("Credentials", (), {"credentials": x_api_key})())
-    
+
     repository = db.query(Repository).filter(Repository.id == repository_id).first()
     if not repository:
         raise HTTPException(status_code=404, detail="Repository not found")
@@ -54,15 +54,15 @@ def create_repository(
     """Create a new repository."""
     # Verify API key
     verify_api_key(type("Credentials", (), {"credentials": x_api_key})())
-    
+
     new_repository = Repository(
         name=repository_data.name,
     )
-    
+
     db.add(new_repository)
     db.commit()
     db.refresh(new_repository)
-    
+
     return new_repository
 
 
@@ -76,16 +76,16 @@ def update_repository(
     """Update a repository."""
     # Verify API key
     verify_api_key(type("Credentials", (), {"credentials": x_api_key})())
-    
+
     repository = db.query(Repository).filter(Repository.id == repository_id).first()
     if not repository:
         raise HTTPException(status_code=404, detail="Repository not found")
-    
+
     repository.name = repository_data.name
-    
+
     db.commit()
     db.refresh(repository)
-    
+
     return repository
 
 
@@ -98,12 +98,12 @@ def delete_repository(
     """Delete a repository."""
     # Verify API key
     verify_api_key(type("Credentials", (), {"credentials": x_api_key})())
-    
+
     repository = db.query(Repository).filter(Repository.id == repository_id).first()
     if not repository:
         raise HTTPException(status_code=404, detail="Repository not found")
-    
+
     db.delete(repository)
     db.commit()
-    
+
     return {"message": "Repository deleted successfully"}

@@ -21,7 +21,7 @@ def get_entities(
     """Get all entities."""
     # Verify API key
     verify_api_key(type("Credentials", (), {"credentials": x_api_key})())
-    
+
     entities = db.query(Entity).all()
     return entities
 
@@ -35,7 +35,7 @@ def get_entity(
     """Get a specific entity by ID."""
     # Verify API key
     verify_api_key(type("Credentials", (), {"credentials": x_api_key})())
-    
+
     entity = db.query(Entity).filter(Entity.id == entity_id).first()
     if not entity:
         raise HTTPException(status_code=404, detail="Entity not found")
@@ -51,18 +51,18 @@ def create_entity(
     """Create a new entity."""
     # Verify API key
     verify_api_key(type("Credentials", (), {"credentials": x_api_key})())
-    
+
     new_entity = Entity(
         type=entity_data.type,
         name=entity_data.name,
         description=entity_data.description,
         aliases=entity_data.aliases,
     )
-    
+
     db.add(new_entity)
     db.commit()
     db.refresh(new_entity)
-    
+
     return new_entity
 
 
@@ -76,19 +76,19 @@ def update_entity(
     """Update an entity."""
     # Verify API key
     verify_api_key(type("Credentials", (), {"credentials": x_api_key})())
-    
+
     entity = db.query(Entity).filter(Entity.id == entity_id).first()
     if not entity:
         raise HTTPException(status_code=404, detail="Entity not found")
-    
+
     entity.type = entity_data.type
     entity.name = entity_data.name
     entity.description = entity_data.description
     entity.aliases = entity_data.aliases
-    
+
     db.commit()
     db.refresh(entity)
-    
+
     return entity
 
 
@@ -101,12 +101,12 @@ def delete_entity(
     """Delete an entity."""
     # Verify API key
     verify_api_key(type("Credentials", (), {"credentials": x_api_key})())
-    
+
     entity = db.query(Entity).filter(Entity.id == entity_id).first()
     if not entity:
         raise HTTPException(status_code=404, detail="Entity not found")
-    
+
     db.delete(entity)
     db.commit()
-    
+
     return {"message": "Entity deleted successfully"}
