@@ -184,8 +184,10 @@ export default function ModernEditor({
   return (
     <div className="h-full flex flex-col bg-white dark:bg-gray-900">
       {/* Toolbar */}
-      <div className="flex items-center justify-between p-3 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
-        <div className="flex items-center space-x-1">
+      <div className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
+        <div className="max-w-4xl mx-auto px-4 py-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-1">
           {/* Text Formatting */}
           <div className="flex items-center space-x-1 pr-2 border-r border-gray-300 dark:border-gray-600">
             <ToolbarButton
@@ -354,6 +356,8 @@ export default function ModernEditor({
               {isFocusMode ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
             </ToolbarButton>
           )}
+            </div>
+          </div>
         </div>
       </div>
 
