@@ -1,5 +1,5 @@
-
 from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app.core.db import get_db
@@ -11,6 +11,16 @@ from app.schemas.story import (
     Scene as SceneSchema,
     SceneCreate,
 )
+
+
+class StoryNodeUpdate(BaseModel):
+    title: str
+    order_idx: int = 0
+
+
+class SceneUpdate(BaseModel):
+    title: str
+    order_idx: int = 0
 
 router = APIRouter()
 
@@ -84,3 +94,83 @@ def create_scene(
     db.refresh(new_scene)
 
     return new_scene
+
+
+@router.put("/nodes/{node_id}", response_model=StoryNodeSchema)
+def update_node(
+    node_id: str,
+    node_data: StoryNodeUpdate,
+    db: Session = Depends(get_db),
+    api_key: str = Depends(verify_api_key),
+):
+    """Update a story node (Epic or Chapter)."""
+
+    node = db.query(StoryNode).filter(StoryNode.id == node_id).first()
+    if not node:
+        raise HTTPException(status_code=404, detail="Story node not found")
+
+    node.title = node_data.title
+    node.order_idx = node_data.order_idx
+
+    db.commit()
+    db.refresh(node)
+
+    return node
+
+
+@router.delete("/nodes/{node_id}")
+def delete_node(
+    node_id: str,
+    db: Session = Depends(get_db),
+    api_key: str = Depends(verify_api_key),
+):
+    """Delete a story node (Epic or Chapter)."""
+
+    node = db.query(StoryNode).filter(StoryNode.id == node_id).first()
+    if not node:
+        raise HTTPException(status_code=404, detail="Story node not found")
+
+    db.delete(node)
+    db.commit()
+
+    return {"message": "Story node deleted successfully"}
+
+
+@router.put("/scenes/{scene_id}", response_model=SceneSchema)
+def update_scene(
+    scene_id: str,
+    scene_data: SceneUpdate,
+    db: Session = Depends(get_db),
+    api_key: str = Depends(verify_api_key),
+):
+    """Update a scene."""
+
+    scene = db.query(Scene).filter(Scene.id == scene_id).first()
+    if not scene:
+        raise HTTPException(status_code=404, detail="Scene not found")
+
+    scene.title = scene_data.title
+    scene.order_idx = scene_data.order_idx
+
+    db.commit()
+    db.refresh(scene)
+
+    return scene
+
+
+@router.delete("/scenes/{scene_id}")
+def delete_scene(
+    scene_id: str,
+    db: Session = Depends(get_db),
+    api_key: str = Depends(verify_api_key),
+):
+    """Delete a scene."""
+
+    scene = db.query(Scene).filter(Scene.id == scene_id).first()
+    if not scene:
+        raise HTTPException(status_code=404, detail="Scene not found")
+
+    db.delete(scene)
+    db.commit()
+
+    return {"message": "Scene deleted successfully"}

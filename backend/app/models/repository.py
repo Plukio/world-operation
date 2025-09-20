@@ -62,8 +62,6 @@ class Branch(Base):
     )
 
 
-
-
 class SceneVersion(Base):
     __tablename__ = "scene_versions"
 
