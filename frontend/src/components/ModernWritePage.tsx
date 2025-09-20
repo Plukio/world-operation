@@ -6,17 +6,13 @@ import {
   EyeOff,
   Type,
   Save,
-  PanelLeft,
-  PanelRight,
   Sparkles,
   Edit3,
-  Trash2,
-  ChevronLeft,
-  ChevronRight
+  Trash2
 } from 'lucide-react';
 import ModernStoryStructure from './ModernStoryStructure';
 import ModernEditor from './ModernEditor';
-import ResizablePane from './ResizablePane';
+import FloatingSidebar from './FloatingSidebar';
 import { sceneContentService } from '../lib/sceneContentService';
 import { collection, getDocs, query, orderBy } from 'firebase/firestore';
 import { db } from '../lib/firebase';
@@ -361,21 +357,214 @@ export default function ModernWritePage({ className = '' }: ModernWritePageProps
   };
 
   return (
-    <div className={`h-full flex ${className}`}>
-      {/* Left Pane - Story Structure */}
-      {!isFocusMode && showLeftPane && (
-        <ResizablePane side="left" initialWidth={320} minWidth={250} maxWidth={500}>
-          <ModernStoryStructure
-            onSceneSelect={handleSceneSelect}
-            onClearSelection={handleClearSelection}
-            selectedSceneId={selectedSceneId || undefined}
-            onStructureChange={loadStoryStructure}
-          />
-        </ResizablePane>
-      )}
+    <div className={`h-full ${className}`}>
+      {/* Floating Left Sidebar - Story Structure */}
+      <FloatingSidebar
+        side="left"
+        isOpen={!isFocusMode && showLeftPane}
+        onToggle={() => setShowLeftPane(!showLeftPane)}
+        title="Story Structure"
+        width={320}
+        minWidth={250}
+        maxWidth={500}
+      >
+        <ModernStoryStructure
+          onSceneSelect={handleSceneSelect}
+          onClearSelection={handleClearSelection}
+          selectedSceneId={selectedSceneId || undefined}
+          onStructureChange={loadStoryStructure}
+        />
+      </FloatingSidebar>
+
+      {/* Floating Right Sidebar - Entities */}
+      <FloatingSidebar
+        side="right"
+        isOpen={!isFocusMode && showRightPane && !!selectedSceneId}
+        onToggle={() => setShowRightPane(!showRightPane)}
+        title="Entities"
+        width={300}
+        minWidth={250}
+        maxWidth={400}
+      >
+        <div className="h-full flex flex-col">
+          {/* Header */}
+          <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+            <div className="flex items-center justify-between">
+              <h3 className="font-medium text-gray-900 dark:text-white">Entities</h3>
+              <button
+                onClick={handleExtractEntities}
+                disabled={isExtractingEntities || !selectedSceneId || !sceneContent.trim()}
+                className={`flex items-center space-x-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                  isExtractingEntities || !selectedSceneId || !sceneContent.trim()
+                    ? 'bg-gray-100 text-gray-400 dark:bg-gray-700 dark:text-gray-500 cursor-not-allowed'
+                    : 'bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600'
+                }`}
+                title="Extract entities from current scene using AI"
+              >
+                <Sparkles className="w-4 h-4" />
+                <span>{isExtractingEntities ? 'Extracting...' : 'Extract'}</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Content */}
+          <div className="flex-1 overflow-y-auto p-4">
+            {sceneEntities.length > 0 || sceneExtraction ? (
+              <div className="space-y-4">
+                {/* Summary */}
+                {sceneExtraction?.summary && (
+                  <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                    <h4 className="font-medium text-blue-900 dark:text-blue-100 mb-2">Scene Summary</h4>
+                    <p className="text-sm text-blue-700 dark:text-blue-300">{sceneExtraction.summary}</p>
+                  </div>
+                )}
+
+                {/* Add New Entity */}
+                <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
+                  <h4 className="font-medium text-gray-900 dark:text-white mb-3">Add Entity</h4>
+                  <div className="space-y-2">
+                    <input
+                      type="text"
+                      placeholder="Entity name"
+                      value={newEntity.entity_name || ''}
+                      onChange={(e) => setNewEntity(prev => ({ ...prev, entity_name: e.target.value }))}
+                      className="w-full p-2 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                    />
+                    <select
+                      value={newEntity.entity_type || 'other'}
+                      onChange={(e) => setNewEntity(prev => ({ ...prev, entity_type: e.target.value as any }))}
+                      className="w-full p-2 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                    >
+                      <option value="character">Character</option>
+                      <option value="place">Place</option>
+                      <option value="event">Event</option>
+                      <option value="object">Object</option>
+                      <option value="relationship">Relationship</option>
+                      <option value="other">Other</option>
+                    </select>
+                    <textarea
+                      placeholder="Description"
+                      value={newEntity.description || ''}
+                      onChange={(e) => setNewEntity(prev => ({ ...prev, description: e.target.value }))}
+                      className="w-full p-2 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                      rows={2}
+                    />
+                    <button
+                      onClick={handleAddEntity}
+                      disabled={!newEntity.entity_name}
+                      className="w-full px-3 py-2 bg-blue-500 text-white rounded text-sm hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed"
+                    >
+                      Add Entity
+                    </button>
+                  </div>
+                </div>
+
+                {/* Debug: Show all entities if no grouped entities */}
+                {sceneEntities.length > 0 && sceneEntities.every(entity => !['character', 'place', 'event', 'object', 'relationship'].includes(entity.entity_type)) && (
+                  <div className="p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
+                    <h4 className="font-medium text-yellow-900 dark:text-yellow-100 mb-2">All Entities</h4>
+                    <div className="space-y-2">
+                      {sceneEntities.map((entity) => (
+                        <div key={entity.id} className="flex items-start space-x-2 p-2 bg-white dark:bg-gray-800 rounded border">
+                          <div className="w-4 h-4 bg-gray-500 rounded-full flex items-center justify-center text-white text-xs">?</div>
+                          <div className="flex-1">
+                            <div className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                              {entity.entity_name} ({entity.entity_type})
+                            </div>
+                            <div className="text-xs text-gray-500 dark:text-gray-400">
+                              {entity.description}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Group entities by type */}
+                {['character', 'place', 'event', 'object', 'relationship'].map(type => {
+                  const entitiesOfType = sceneEntities.filter(entity => entity.entity_type === type);
+                  if (entitiesOfType.length === 0) return null;
+
+                  const getIcon = (entityType: string) => {
+                    switch (entityType) {
+                      case 'character': return <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs font-medium">C</div>;
+                      case 'place': return <MapPin className="w-4 h-4 text-red-500" />;
+                      case 'event': return <Calendar className="w-4 h-4 text-orange-500" />;
+                      case 'object': return <div className="w-6 h-6 bg-purple-500 rounded-full flex items-center justify-center text-white text-xs font-medium">O</div>;
+                      case 'relationship': return <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center text-white text-xs font-medium">R</div>;
+                      default: return <div className="w-6 h-6 bg-gray-500 rounded-full flex items-center justify-center text-white text-xs font-medium">?</div>;
+                    }
+                  };
+
+                  return (
+                    <div key={type}>
+                      <h4 className="font-medium text-gray-900 dark:text-white mb-3 capitalize">
+                        {type}s ({entitiesOfType.length})
+                      </h4>
+                      <div className="space-y-2">
+                        {entitiesOfType.map((entity) => (
+                          <div key={entity.id} className="flex items-start space-x-2 p-2 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                            {getIcon(entity.entity_type)}
+                            <div className="flex-1 min-w-0">
+                              <div className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                                {entity.entity_name}
+                              </div>
+                              <div className="text-xs text-gray-500 dark:text-gray-400">
+                                {entity.description}
+                              </div>
+                              {entity.actions && entity.actions.length > 0 && (
+                                <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                  Actions: {entity.actions.join(', ')}
+                                </div>
+                              )}
+                              <div className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                                Confidence: {Math.round(entity.confidence * 100)}%
+                              </div>
+                            </div>
+                            <div className="flex space-x-1">
+                              <button
+                                onClick={() => handleEditEntity(entity)}
+                                className="p-1 text-gray-400 hover:text-blue-500"
+                                title="Edit entity"
+                              >
+                                <Edit3 className="w-3 h-3" />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteEntity(entity.id!)}
+                                className="p-1 text-gray-400 hover:text-red-500"
+                                title="Delete entity"
+                              >
+                                <Trash2 className="w-3 h-3" />
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                  <Sparkles className="w-8 h-8 text-white" />
+                </div>
+                <h4 className="font-medium text-gray-900 dark:text-white mb-2">No Entities Extracted</h4>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                  Select a scene with content and click 'Extract' to analyze it with AI.
+                </p>
+                <div className="text-xs text-gray-500 dark:text-gray-400">
+                  AI will identify characters, places, events, objects, and relationships.
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </FloatingSidebar>
 
       {/* Main Editor Area */}
-      <div className="flex-1 flex flex-col">
+      <div className="h-full flex flex-col">
         {/* Header Row */}
         <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 transition-colors duration-200">
           {/* Breadcrumbs */}
@@ -426,32 +615,6 @@ export default function ModernWritePage({ className = '' }: ModernWritePageProps
 
           {/* Right Actions */}
           <div className="flex items-center space-x-2">
-            {/* Sidebar Toggles */}
-            <button
-              onClick={() => setShowLeftPane(!showLeftPane)}
-              className={`p-2 rounded-lg transition-colors ${
-                showLeftPane
-                  ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300'
-                  : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700'
-              }`}
-              title="Toggle Story Structure"
-            >
-              <PanelLeft className="w-4 h-4" />
-            </button>
-            <button
-              onClick={() => setShowRightPane(!showRightPane)}
-              disabled={!selectedSceneId}
-              className={`p-2 rounded-lg transition-colors ${
-                !selectedSceneId
-                  ? 'text-gray-300 dark:text-gray-600 cursor-not-allowed'
-                  : showRightPane
-                    ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300'
-                    : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700'
-              }`}
-              title={selectedSceneId ? "Toggle Entities Panel" : "Select a scene to view entities"}
-            >
-              <PanelRight className="w-4 h-4" />
-            </button>
 
             {/* Mode Toggles */}
             <button
@@ -546,207 +709,7 @@ export default function ModernWritePage({ className = '' }: ModernWritePageProps
         </div>
       </div>
 
-      {/* Floating Toggle Buttons */}
-      {!showLeftPane && (
-        <button
-          onClick={() => setShowLeftPane(true)}
-          className="fixed left-4 top-1/2 transform -translate-y-1/2 z-40 p-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-          title="Show Story Structure"
-        >
-          <ChevronRight className="w-4 h-4 text-gray-600 dark:text-gray-400" />
-        </button>
-      )}
 
-      {!showRightPane && selectedSceneId && (
-        <button
-          onClick={() => setShowRightPane(true)}
-          className="fixed right-4 top-1/2 transform -translate-y-1/2 z-40 p-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-          title="Show Entities Panel"
-        >
-          <ChevronLeft className="w-4 h-4 text-gray-600 dark:text-gray-400" />
-        </button>
-      )}
-
-      {/* Right Pane - Inspector */}
-      {showRightPane && !isFocusMode && selectedSceneId && (
-        <ResizablePane side="right" initialWidth={300} minWidth={250} maxWidth={400}>
-          <div className="h-full flex flex-col">
-            {/* Header */}
-            <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-              <div className="flex items-center justify-between">
-                <h3 className="font-medium text-gray-900 dark:text-white">Entities</h3>
-                <button
-                  onClick={handleExtractEntities}
-                  disabled={isExtractingEntities || !selectedSceneId || !sceneContent.trim()}
-                  className={`flex items-center space-x-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                    isExtractingEntities || !selectedSceneId || !sceneContent.trim()
-                      ? 'bg-gray-100 text-gray-400 dark:bg-gray-700 dark:text-gray-500 cursor-not-allowed'
-                      : 'bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600'
-                  }`}
-                  title="Extract entities from current scene using AI"
-                >
-                  <Sparkles className="w-4 h-4" />
-                  <span>{isExtractingEntities ? 'Extracting...' : 'Extract'}</span>
-                </button>
-              </div>
-            </div>
-
-            {/* Content */}
-            <div className="flex-1 overflow-y-auto p-4">
-              {sceneEntities.length > 0 || sceneExtraction ? (
-                <div className="space-y-4">
-                  {/* Summary */}
-                  {sceneExtraction?.summary && (
-                    <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                      <h4 className="font-medium text-blue-900 dark:text-blue-100 mb-2">Scene Summary</h4>
-                      <p className="text-sm text-blue-700 dark:text-blue-300">{sceneExtraction.summary}</p>
-                    </div>
-                  )}
-
-                  {/* Add New Entity */}
-                  <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
-                    <h4 className="font-medium text-gray-900 dark:text-white mb-3">Add Entity</h4>
-                    <div className="space-y-2">
-                      <input
-                        type="text"
-                        placeholder="Entity name"
-                        value={newEntity.entity_name || ''}
-                        onChange={(e) => setNewEntity(prev => ({ ...prev, entity_name: e.target.value }))}
-                        className="w-full p-2 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-                      />
-                      <select
-                        value={newEntity.entity_type || 'other'}
-                        onChange={(e) => setNewEntity(prev => ({ ...prev, entity_type: e.target.value as any }))}
-                        className="w-full p-2 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-                      >
-                        <option value="character">Character</option>
-                        <option value="place">Place</option>
-                        <option value="event">Event</option>
-                        <option value="object">Object</option>
-                        <option value="relationship">Relationship</option>
-                        <option value="other">Other</option>
-                      </select>
-                      <textarea
-                        placeholder="Description"
-                        value={newEntity.description || ''}
-                        onChange={(e) => setNewEntity(prev => ({ ...prev, description: e.target.value }))}
-                        className="w-full p-2 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-                        rows={2}
-                      />
-                      <button
-                        onClick={handleAddEntity}
-                        disabled={!newEntity.entity_name}
-                        className="w-full px-3 py-2 bg-blue-500 text-white rounded text-sm hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed"
-                      >
-                        Add Entity
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Debug: Show all entities if no grouped entities */}
-                  {sceneEntities.length > 0 && sceneEntities.every(entity => !['character', 'place', 'event', 'object', 'relationship'].includes(entity.entity_type)) && (
-                    <div className="p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
-                      <h4 className="font-medium text-yellow-900 dark:text-yellow-100 mb-2">All Entities</h4>
-                      <div className="space-y-2">
-                        {sceneEntities.map((entity) => (
-                          <div key={entity.id} className="flex items-start space-x-2 p-2 bg-white dark:bg-gray-800 rounded border">
-                            <div className="w-4 h-4 bg-gray-500 rounded-full flex items-center justify-center text-white text-xs">?</div>
-                            <div className="flex-1">
-                              <div className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                                {entity.entity_name} ({entity.entity_type})
-                              </div>
-                              <div className="text-xs text-gray-500 dark:text-gray-400">
-                                {entity.description}
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Group entities by type */}
-                  {['character', 'place', 'event', 'object', 'relationship'].map(type => {
-                    const entitiesOfType = sceneEntities.filter(entity => entity.entity_type === type);
-                    if (entitiesOfType.length === 0) return null;
-
-                    const getIcon = (entityType: string) => {
-                      switch (entityType) {
-                        case 'character': return <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs font-medium">C</div>;
-                        case 'place': return <MapPin className="w-4 h-4 text-red-500" />;
-                        case 'event': return <Calendar className="w-4 h-4 text-orange-500" />;
-                        case 'object': return <div className="w-6 h-6 bg-purple-500 rounded-full flex items-center justify-center text-white text-xs font-medium">O</div>;
-                        case 'relationship': return <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center text-white text-xs font-medium">R</div>;
-                        default: return <div className="w-6 h-6 bg-gray-500 rounded-full flex items-center justify-center text-white text-xs font-medium">?</div>;
-                      }
-                    };
-
-                    return (
-                      <div key={type}>
-                        <h4 className="font-medium text-gray-900 dark:text-white mb-3 capitalize">
-                          {type}s ({entitiesOfType.length})
-                        </h4>
-                        <div className="space-y-2">
-                          {entitiesOfType.map((entity) => (
-                            <div key={entity.id} className="flex items-start space-x-2 p-2 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                              {getIcon(entity.entity_type)}
-                              <div className="flex-1 min-w-0">
-                                <div className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                                  {entity.entity_name}
-                                </div>
-                                <div className="text-xs text-gray-500 dark:text-gray-400">
-                                  {entity.description}
-                                </div>
-                                {entity.actions && entity.actions.length > 0 && (
-                                  <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                                    Actions: {entity.actions.join(', ')}
-                                  </div>
-                                )}
-                                <div className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                                  Confidence: {Math.round(entity.confidence * 100)}%
-                                </div>
-                              </div>
-                              <div className="flex space-x-1">
-                                <button
-                                  onClick={() => handleEditEntity(entity)}
-                                  className="p-1 text-gray-400 hover:text-blue-500"
-                                  title="Edit entity"
-                                >
-                                  <Edit3 className="w-3 h-3" />
-                                </button>
-                                <button
-                                  onClick={() => handleDeleteEntity(entity.id!)}
-                                  className="p-1 text-gray-400 hover:text-red-500"
-                                  title="Delete entity"
-                                >
-                                  <Trash2 className="w-3 h-3" />
-                                </button>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <div className="text-center py-8">
-                  <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                    <Sparkles className="w-8 h-8 text-white" />
-                  </div>
-                  <h4 className="font-medium text-gray-900 dark:text-white mb-2">No Entities Extracted</h4>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                    Select a scene with content and click "Extract" to analyze it with AI.
-                  </p>
-                  <div className="text-xs text-gray-500 dark:text-gray-400">
-                    AI will identify characters, places, events, objects, and relationships.
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        </ResizablePane>
-      )}
 
       {/* Edit Entity Modal */}
       {editingEntity && (
