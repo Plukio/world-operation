@@ -167,19 +167,23 @@ export default function ModernStoryStructure({ onSceneSelect, onClearSelection, 
     try {
       console.log('🔄 Updating item:', { id, type, newTitle });
       if (type === 'node') {
+        console.log('📝 Updating node in Firebase...');
         await updateDoc(doc(db, 'storyNodes', id), { 
           title: newTitle, 
           updated_at: new Date() 
         });
+        console.log('📝 Updating local state...');
         setNodes(prev => prev.map(node => 
           node.id === id ? { ...node, title: newTitle, updated_at: new Date() } : node
         ));
         console.log('✅ Node updated successfully');
       } else {
+        console.log('📝 Updating scene in Firebase...');
         await updateDoc(doc(db, 'scenes', id), { 
           title: newTitle, 
           updated_at: new Date() 
         });
+        console.log('📝 Updating local state...');
         setScenes(prev => prev.map(scene => 
           scene.id === id ? { ...scene, title: newTitle, updated_at: new Date() } : scene
         ));
@@ -192,24 +196,42 @@ export default function ModernStoryStructure({ onSceneSelect, onClearSelection, 
       }
     } catch (error) {
       console.error('❌ Error updating item:', error);
+      alert(`Failed to update ${type}: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 
   const handleDeleteItem = async (id: string, type: 'node' | 'scene') => {
     try {
       console.log('🗑️ Deleting item:', { id, type });
+      
+      // Confirm deletion
+      const itemName = type === 'node' 
+        ? nodes.find(n => n.id === id)?.title || 'item'
+        : scenes.find(s => s.id === id)?.title || 'item';
+      
+      if (!confirm(`Are you sure you want to delete "${itemName}"? This action cannot be undone.`)) {
+        return;
+      }
+      
       if (type === 'node') {
+        console.log('🗑️ Deleting node from Firebase...');
         await deleteDoc(doc(db, 'storyNodes', id));
+        console.log('🗑️ Updating local nodes state...');
         setNodes(prev => prev.filter(node => node.id !== id));
+        
         // Also delete associated scenes
         const associatedScenes = scenes.filter(scene => scene.node_id === id);
+        console.log('🗑️ Deleting associated scenes:', associatedScenes.length);
         for (const scene of associatedScenes) {
           await deleteDoc(doc(db, 'scenes', scene.id));
         }
+        console.log('🗑️ Updating local scenes state...');
         setScenes(prev => prev.filter(scene => scene.node_id !== id));
         console.log('✅ Node and associated scenes deleted successfully');
       } else {
+        console.log('🗑️ Deleting scene from Firebase...');
         await deleteDoc(doc(db, 'scenes', id));
+        console.log('🗑️ Updating local scenes state...');
         setScenes(prev => prev.filter(scene => scene.id !== id));
         console.log('✅ Scene deleted successfully');
       }
@@ -220,6 +242,7 @@ export default function ModernStoryStructure({ onSceneSelect, onClearSelection, 
       }
     } catch (error) {
       console.error('❌ Error deleting item:', error);
+      alert(`Failed to delete ${type}: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 
