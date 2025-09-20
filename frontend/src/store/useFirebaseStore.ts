@@ -454,13 +454,23 @@ export const useFirebaseStore = create<FirebaseAppState>((set, get) => ({
     
     try {
       console.log('📡 Calling firebaseService.createStoryNode...');
-      const result = await firebaseService.createStoryNode({
+      
+      // Prepare the data object, only including parent_id if it's defined
+      const nodeData: any = {
         repo_id: repoId,
         kind,
         title,
-        parent_id: parentId,
         order_idx: 0,
-      });
+      };
+      
+      // Only add parent_id if it's defined (not undefined)
+      if (parentId !== undefined) {
+        nodeData.parent_id = parentId;
+      }
+      
+      console.log('📊 Node data to create:', nodeData);
+      
+      const result = await firebaseService.createStoryNode(nodeData);
       console.log('✅ Firebase createStoryNode result:', result);
       
       console.log('🔄 Refreshing structure...');
