@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { api } from "../lib/api";
+import { firebaseAutoSave } from "../lib/firebaseAutosave";
 
 export interface StoryNode {
   id: string;
@@ -303,41 +304,41 @@ export const useAppStore = create<AppState>((set, get) => ({
     }));
 
     try {
-      const response = await api.post("/versions/save", {
-        scene_id: current.sceneId,
-        branch_id: branch.id,
-        parent_version_id: editor.parentVersionId || null,
-        content_html: editor.html,
-        meta: {
+      const result = await firebaseAutoSave.autoSaveScene(
+        current.sceneId,
+        branch.id,
+        editor.html,
+        {
           pov: "Alia", // TODO: Get from style locks
           tense: "present",
           style: "tense",
-        },
-        message: "Auto-save",
-      });
-
-      const newVersionId = response.data.version_id;
-
-      set((state) => ({
-        editor: {
-          ...state.editor,
-          dirty: false,
-          parentVersionId: newVersionId,
-          autoSaving: false,
-          lastSaved: new Date(),
-        },
-        current: {
-          ...state.current,
-          versionId: newVersionId,
-        },
-      }));
-
-      // Emit event for other components
-      window.dispatchEvent(
-        new CustomEvent("scene:autosaved", {
-          detail: { sceneId: current.sceneId, versionId: newVersionId },
-        }),
+        }
       );
+
+      if (result.success) {
+        set((state) => ({
+          editor: {
+            ...state.editor,
+            dirty: false,
+            parentVersionId: result.versionId,
+            autoSaving: false,
+            lastSaved: new Date(),
+          },
+          current: {
+            ...state.current,
+            versionId: result.versionId,
+          },
+        }));
+
+        // Emit event for other components
+        window.dispatchEvent(
+          new CustomEvent("scene:autosaved", {
+            detail: { sceneId: current.sceneId, versionId: result.versionId },
+          }),
+        );
+      } else {
+        throw new Error(result.error || 'Auto-save failed');
+      }
     } catch (error) {
       console.error("Failed to auto-save:", error);
       set((state) => ({
