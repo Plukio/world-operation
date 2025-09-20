@@ -1,19 +1,11 @@
 import { useEffect, useRef } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
-import Bold from '@tiptap/extension-bold';
-import Italic from '@tiptap/extension-italic';
 import Underline from '@tiptap/extension-underline';
 import Strike from '@tiptap/extension-strike';
 import Heading from '@tiptap/extension-heading';
-import BulletList from '@tiptap/extension-bullet-list';
-import OrderedList from '@tiptap/extension-ordered-list';
-import ListItem from '@tiptap/extension-list-item';
-import Blockquote from '@tiptap/extension-blockquote';
-import Code from '@tiptap/extension-code';
 import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight';
 import Highlight from '@tiptap/extension-highlight';
-import History from '@tiptap/extension-history';
 import HorizontalRule from '@tiptap/extension-horizontal-rule';
 import Link from '@tiptap/extension-link';
 import { createLowlight } from 'lowlight';
@@ -66,25 +58,17 @@ export default function ModernEditor({
   const editor = useEditor({
     extensions: [
       StarterKit,
-      Bold,
-      Italic,
       Underline,
       Strike,
       Heading.configure({
         levels: [1, 2, 3],
       }),
-      BulletList,
-      OrderedList,
-      ListItem,
-      Blockquote,
-      Code,
       CodeBlockLowlight.configure({
         lowlight: createLowlight(),
       }),
       Highlight.configure({
         multicolor: true,
       }),
-      History,
       HorizontalRule,
       Link.configure({
         openOnClick: false,
@@ -124,6 +108,15 @@ export default function ModernEditor({
       }
     }
   }, [value, editor]);
+
+  // Cleanup editor on unmount
+  useEffect(() => {
+    return () => {
+      if (editor) {
+        editor.destroy();
+      }
+    };
+  }, [editor]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {

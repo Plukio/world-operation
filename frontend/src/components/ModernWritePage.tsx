@@ -273,6 +273,7 @@ export default function ModernWritePage({ className = '' }: ModernWritePageProps
               </div>
             ) : (
               <ModernEditor
+                key={selectedSceneId}
                 value={sceneContent}
                 onChange={handleEditorChange}
                 placeholder="Start writing your scene..."
