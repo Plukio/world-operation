@@ -1,4 +1,5 @@
 """Scene model."""
+
 import uuid
 
 from sqlalchemy import Column, ForeignKey, String, Text
@@ -12,7 +13,9 @@ class Scene(Base):
 
     __tablename__ = "scenes"
 
-    id = Column(UUID(as_uuid=False), primary_key=True, default=lambda: str(uuid.uuid4()))
+    id = Column(
+        UUID(as_uuid=False), primary_key=True, default=lambda: str(uuid.uuid4())
+    )
     text = Column(Text, nullable=False)
     title = Column(String(255))
     pov_entity_id = Column(UUID(as_uuid=False), ForeignKey("entities.id"))

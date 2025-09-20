@@ -1,4 +1,5 @@
 """FastAPI main application."""
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -7,7 +8,7 @@ from .api import entities, extract, scenes
 app = FastAPI(
     title="World Operation API",
     description="API for entity extraction and scene generation",
-    version="0.1.0"
+    version="0.1.0",
 )
 
 # Add CORS middleware

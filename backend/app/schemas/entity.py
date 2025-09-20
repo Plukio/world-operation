@@ -5,6 +5,7 @@ from pydantic import BaseModel
 
 class EntityBase(BaseModel):
     """Base entity schema."""
+
     type: str
     name: str
     description: str | None = None
@@ -13,11 +14,13 @@ class EntityBase(BaseModel):
 
 class EntityCreate(EntityBase):
     """Entity creation schema."""
+
     pass
 
 
 class Entity(EntityBase):
     """Entity response schema."""
+
     id: str
 
     class Config:

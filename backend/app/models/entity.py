@@ -1,4 +1,5 @@
 """Entity model."""
+
 import uuid
 
 from sqlalchemy import ARRAY, Column, String, Text
@@ -12,7 +13,9 @@ class Entity(Base):
 
     __tablename__ = "entities"
 
-    id = Column(UUID(as_uuid=False), primary_key=True, default=lambda: str(uuid.uuid4()))
+    id = Column(
+        UUID(as_uuid=False), primary_key=True, default=lambda: str(uuid.uuid4())
+    )
     type = Column(String(50), nullable=False)  # character, place, object, event
     name = Column(String(255), nullable=False)
     description = Column(Text)

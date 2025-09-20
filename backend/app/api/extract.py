@@ -1,4 +1,5 @@
 """Entity extraction API routes."""
+
 from typing import Any
 
 from fastapi import APIRouter, Header, HTTPException
@@ -11,13 +12,12 @@ router = APIRouter()
 
 @router.post("/extract")
 async def extract_entities(
-    request: dict[str, Any],
-    x_api_key: str = Header(..., alias="X-API-Key")
+    request: dict[str, Any], x_api_key: str = Header(..., alias="X-API-Key")
 ) -> dict[str, Any]:
     """Extract entities from scene text."""
 
     # Verify API key
-    verify_api_key(type('Credentials', (), {'credentials': x_api_key})())
+    verify_api_key(type("Credentials", (), {"credentials": x_api_key})())
 
     scene_text = request.get("scene_text")
     if not scene_text:

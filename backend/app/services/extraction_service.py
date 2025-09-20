@@ -1,4 +1,5 @@
 """Entity extraction service."""
+
 from typing import Any
 
 from .llm_client import LLMClient
@@ -29,13 +30,17 @@ class ExtractionService:
                                     "type": "object",
                                     "properties": {
                                         "start_idx": {"type": "integer"},
-                                        "end_idx": {"type": "integer"}
-                                    }
-                                }
+                                        "end_idx": {"type": "integer"},
+                                    },
+                                },
                             },
-                            "confidence": {"type": "number", "minimum": 0, "maximum": 1}
-                        }
-                    }
+                            "confidence": {
+                                "type": "number",
+                                "minimum": 0,
+                                "maximum": 1,
+                            },
+                        },
+                    },
                 },
                 "places": {
                     "type": "array",
@@ -50,13 +55,17 @@ class ExtractionService:
                                     "type": "object",
                                     "properties": {
                                         "start_idx": {"type": "integer"},
-                                        "end_idx": {"type": "integer"}
-                                    }
-                                }
+                                        "end_idx": {"type": "integer"},
+                                    },
+                                },
                             },
-                            "confidence": {"type": "number", "minimum": 0, "maximum": 1}
-                        }
-                    }
+                            "confidence": {
+                                "type": "number",
+                                "minimum": 0,
+                                "maximum": 1,
+                            },
+                        },
+                    },
                 },
                 "events": {
                     "type": "array",
@@ -71,13 +80,17 @@ class ExtractionService:
                                     "type": "object",
                                     "properties": {
                                         "start_idx": {"type": "integer"},
-                                        "end_idx": {"type": "integer"}
-                                    }
-                                }
+                                        "end_idx": {"type": "integer"},
+                                    },
+                                },
                             },
-                            "confidence": {"type": "number", "minimum": 0, "maximum": 1}
-                        }
-                    }
+                            "confidence": {
+                                "type": "number",
+                                "minimum": 0,
+                                "maximum": 1,
+                            },
+                        },
+                    },
                 },
                 "objects": {
                     "type": "array",
@@ -92,13 +105,17 @@ class ExtractionService:
                                     "type": "object",
                                     "properties": {
                                         "start_idx": {"type": "integer"},
-                                        "end_idx": {"type": "integer"}
-                                    }
-                                }
+                                        "end_idx": {"type": "integer"},
+                                    },
+                                },
                             },
-                            "confidence": {"type": "number", "minimum": 0, "maximum": 1}
-                        }
-                    }
+                            "confidence": {
+                                "type": "number",
+                                "minimum": 0,
+                                "maximum": 1,
+                            },
+                        },
+                    },
                 },
                 "relationships": {
                     "type": "array",
@@ -108,22 +125,26 @@ class ExtractionService:
                             "source": {"type": "string"},
                             "target": {"type": "string"},
                             "relation_type": {"type": "string"},
-                            "confidence": {"type": "number", "minimum": 0, "maximum": 1}
-                        }
-                    }
-                }
-            }
+                            "confidence": {
+                                "type": "number",
+                                "minimum": 0,
+                                "maximum": 1,
+                            },
+                        },
+                    },
+                },
+            },
         }
 
         messages = [
             {
                 "role": "system",
-                "content": "You are an expert at extracting entities from narrative text. Extract characters, places, events, objects, and relationships from the given scene text. For each entity, provide the name, description, character spans (start and end indices), and confidence score."
+                "content": "You are an expert at extracting entities from narrative text. Extract characters, places, events, objects, and relationships from the given scene text. For each entity, provide the name, description, character spans (start and end indices), and confidence score.",
             },
             {
                 "role": "user",
-                "content": f"Extract entities from this scene text:\n\n{scene_text}"
-            }
+                "content": f"Extract entities from this scene text:\n\n{scene_text}",
+            },
         ]
 
         return self.llm_client.respond_json(messages, json_schema)
