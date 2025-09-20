@@ -10,9 +10,16 @@ dependencies = [
     "alembic>=1.13",
     "psycopg[binary,pool]>=3.2",
     "pydantic>=2.7",
+    "pydantic-settings>=2.0",
     "python-dotenv>=1.0",
     "openai>=1.40.0",
     "httpx>=0.27",
+]
+
+[project.optional-dependencies]
+dev = [
+    "ruff>=0.13.0",
+    "black>=24.0.0",
 ]
 
 [build-system]

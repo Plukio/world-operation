@@ -29,18 +29,17 @@ jobs:
     - name: Install dependencies
       run: |
         cd backend
-        uv pip install --system -r requirements.txt
-        uv pip install --system ruff black
+        uv sync --system --extra dev
     
     - name: Lint with ruff
       run: |
         cd backend
-        ruff check .
+        uv run ruff check .
     
     - name: Format check with black
       run: |
         cd backend
-        black --check .
+        uv run black --check .
 
   frontend:
     runs-on: ubuntu-latest
