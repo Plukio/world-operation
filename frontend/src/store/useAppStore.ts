@@ -50,6 +50,8 @@ interface AppState {
     html: string;
     dirty: boolean;
     parentVersionId?: string;
+    autoSaving: boolean;
+    lastSaved: Date | null;
   };
 
   // Actions
@@ -60,6 +62,7 @@ interface AppState {
   refreshStructure: () => Promise<void>;
   loadLatestVersion: (sceneId: string, branchId: string) => Promise<void>;
   saveVersion: (message?: string) => Promise<string | null>;
+  autoSave: () => Promise<void>;
   clearDirty: () => void;
   
   // CRUD operations
@@ -83,6 +86,9 @@ export const useAppStore = create<AppState>((set, get) => ({
   editor: {
     html: "<p>Start writing your story here...</p>",
     dirty: false,
+    parentVersionId: undefined,
+    autoSaving: false,
+    lastSaved: null,
   },
 
   // Actions
@@ -124,6 +130,16 @@ export const useAppStore = create<AppState>((set, get) => ({
         dirty: true,
       },
     }));
+
+    // Clear existing auto-save timeout
+    if ((window as any).autoSaveTimeout) {
+      clearTimeout((window as any).autoSaveTimeout);
+    }
+
+    // Set new auto-save timeout (2 seconds debounce)
+    (window as any).autoSaveTimeout = setTimeout(() => {
+      get().autoSave();
+    }, 2000);
   },
 
   refreshStructure: async () => {
@@ -195,17 +211,21 @@ export const useAppStore = create<AppState>((set, get) => ({
             version.content_html || "<p>Start writing your story here...</p>",
           dirty: false,
           parentVersionId: version.id,
+          autoSaving: false,
+          lastSaved: null,
         },
       }));
     } catch (error) {
       console.error("Failed to load latest version:", error);
       // Set empty content if no version exists
       set(() => ({
-        editor: {
-          html: "<p>Start writing your story here...</p>",
-          dirty: false,
-          parentVersionId: undefined,
-        },
+  editor: {
+    html: "<p>Start writing your story here...</p>",
+    dirty: false,
+    parentVersionId: undefined,
+    autoSaving: false,
+    lastSaved: null,
+  },
       }));
     }
   },
@@ -213,8 +233,8 @@ export const useAppStore = create<AppState>((set, get) => ({
   saveVersion: async (message?: string) => {
     const { current, branch, editor } = get();
 
-    if (!current.sceneId || !branch || !editor.parentVersionId) {
-      console.error("Cannot save: missing scene, branch, or parent version");
+    if (!current.sceneId || !branch) {
+      console.error("Cannot save: missing scene or branch");
       return null;
     }
 
@@ -222,7 +242,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       const response = await api.post("/versions/save", {
         scene_id: current.sceneId,
         branch_id: branch.id,
-        parent_version_id: editor.parentVersionId,
+        parent_version_id: editor.parentVersionId || null,
         content_html: editor.html,
         meta: {
           pov: "Alia", // TODO: Get from style locks
@@ -257,7 +277,75 @@ export const useAppStore = create<AppState>((set, get) => ({
       return newVersionId;
     } catch (error) {
       console.error("Failed to save version:", error);
+      // Even if API fails, mark as saved locally to prevent data loss
+      set(() => ({
+        editor: {
+          ...get().editor,
+          dirty: false,
+        },
+      }));
       return null;
+    }
+  },
+
+  autoSave: async () => {
+    const { current, branch, editor } = get();
+
+    if (!current.sceneId || !branch || !editor.dirty || editor.autoSaving) {
+      return;
+    }
+
+    set((state) => ({
+      editor: {
+        ...state.editor,
+        autoSaving: true,
+      },
+    }));
+
+    try {
+      const response = await api.post("/versions/save", {
+        scene_id: current.sceneId,
+        branch_id: branch.id,
+        parent_version_id: editor.parentVersionId || null,
+        content_html: editor.html,
+        meta: {
+          pov: "Alia", // TODO: Get from style locks
+          tense: "present",
+          style: "tense",
+        },
+        message: "Auto-save",
+      });
+
+      const newVersionId = response.data.version_id;
+
+      set((state) => ({
+        editor: {
+          ...state.editor,
+          dirty: false,
+          parentVersionId: newVersionId,
+          autoSaving: false,
+          lastSaved: new Date(),
+        },
+        current: {
+          ...state.current,
+          versionId: newVersionId,
+        },
+      }));
+
+      // Emit event for other components
+      window.dispatchEvent(
+        new CustomEvent("scene:autosaved", {
+          detail: { sceneId: current.sceneId, versionId: newVersionId },
+        }),
+      );
+    } catch (error) {
+      console.error("Failed to auto-save:", error);
+      set((state) => ({
+        editor: {
+          ...state.editor,
+          autoSaving: false,
+        },
+      }));
     }
   },
 

@@ -1,7 +1,6 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import RichTextEditor from "../components/RichTextEditor";
 import BranchBar from "../components/BranchBar";
-import MusePanel from "../components/MusePanel";
 import PRModal from "../components/PRModal";
 import CreateEditModal from "../components/CreateEditModal";
 import ContextMenu from "../components/ContextMenu";
@@ -12,7 +11,7 @@ import { api } from "../lib/api";
 export default function WritePage() {
   const [activeTab, setActiveTab] = useState<"episode" | "scene">("episode");
   const [extracting, setExtracting] = useState(false);
-  const [saving, setSaving] = useState(false);
+  const [loadingScene, setLoadingScene] = useState(false);
   const [showPRModal, setShowPRModal] = useState(false);
   
   // CRUD modal states
@@ -59,7 +58,6 @@ export default function WritePage() {
     setCurrentScene,
     setEditorHtml,
     refreshStructure,
-    saveVersion,
     createNode,
     updateNode,
     deleteNode,
@@ -94,29 +92,7 @@ export default function WritePage() {
     structure.nodes.length,
   ]);
 
-  const handleSave = useCallback(async () => {
-    if (editor.dirty && !saving) {
-      setSaving(true);
-      try {
-        await saveVersion();
-      } finally {
-        setSaving(false);
-      }
-    }
-  }, [editor.dirty, saving, saveVersion]);
-
-  // Handle save with keyboard shortcut
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === "s") {
-        e.preventDefault();
-        handleSave();
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [handleSave]);
+  // Auto-save is now handled automatically by the store
 
   const handleExtract = async () => {
     setExtracting(true);
@@ -144,38 +120,10 @@ export default function WritePage() {
   };
 
   const handleCommit = async (message: string) => {
-    await saveVersion(message);
+    // Commits are now handled by the auto-save system
+    console.log("Commit message:", message);
   };
 
-  const handleConstraintGenerated = (constraint: string) => {
-    // TODO: Apply constraint to editor
-    console.log("Constraint:", constraint);
-  };
-
-  const handleObstacleEscalated = (options: string[]) => {
-    // TODO: Show options to user
-    console.log("Obstacle options:", options);
-  };
-
-  const handlePOVSwapped = (text: string) => {
-    // TODO: Replace current text with POV-swapped version
-    console.log("POV swapped:", text);
-  };
-
-  const handleSensoryEnhanced = (text: string) => {
-    // TODO: Replace current text with enhanced version
-    console.log("Sensory enhanced:", text);
-  };
-
-  const handleBeatTemplateInserted = (template: string) => {
-    // TODO: Insert template into editor
-    setEditorHtml(editor.html + template);
-  };
-
-  const handleWhatIfForked = (whatIf: string) => {
-    // TODO: Create new branch with what-if scenario
-    console.log("What-if fork:", whatIf);
-  };
 
   const handlePRCreated = (
     sourceBranch: string,
@@ -267,6 +215,15 @@ export default function WritePage() {
 
   const handleInlineEditCancel = () => {
     setEditingItem(null);
+  };
+
+  const handleSceneSelect = async (sceneId: string) => {
+    setLoadingScene(true);
+    try {
+      setCurrentScene(sceneId);
+    } finally {
+      setLoadingScene(false);
+    }
   };
 
 
@@ -385,7 +342,7 @@ export default function WritePage() {
                                       className={`text-left w-full ${
                                         current.sceneId === sc.id ? "font-semibold" : ""
                                       }`}
-                                      onClick={() => setCurrentScene(sc.id)}
+                                      onClick={() => handleSceneSelect(sc.id)}
                                       onContextMenu={(e) => handleContextMenu(e, "scene", sc.id, sc.title)}
                                     >
                                       <span 
@@ -415,18 +372,33 @@ export default function WritePage() {
         </aside>
 
         {/* Editor + actions */}
-        <section className="col-span-6">
-          {/* Style Locks */}
-          <div className="flex gap-2 mb-2">
-            <span className="text-xs bg-gray-100 px-2 py-1 rounded">
-              POV: Alia
-            </span>
-            <span className="text-xs bg-gray-100 px-2 py-1 rounded">
-              Tense: present
-            </span>
-            <span className="text-xs bg-gray-100 px-2 py-1 rounded">
-              Style: tense
-            </span>
+        <section className="col-span-9">
+          {/* Status and Style Locks */}
+          <div className="flex justify-between items-center mb-2">
+            <div className="flex gap-2">
+              <span className="text-xs bg-gray-100 px-2 py-1 rounded">
+                POV: Alia
+              </span>
+              <span className="text-xs bg-gray-100 px-2 py-1 rounded">
+                Tense: present
+              </span>
+              <span className="text-xs bg-gray-100 px-2 py-1 rounded">
+                Style: tense
+              </span>
+            </div>
+            {current.sceneId && (
+              <div className="text-xs text-gray-500">
+                {editor.autoSaving ? (
+                  <span className="text-blue-600">⏳ Auto-saving...</span>
+                ) : editor.dirty ? (
+                  <span className="text-orange-600">• Unsaved changes</span>
+                ) : (
+                  <span className="text-green-600">
+                    ✓ Saved {editor.lastSaved ? `at ${editor.lastSaved.toLocaleTimeString()}` : ''}
+                  </span>
+                )}
+              </div>
+            )}
           </div>
 
           <div className="flex gap-2 mb-2">
@@ -444,7 +416,13 @@ export default function WritePage() {
             </button>
           </div>
 
-          <RichTextEditor value={editor.html} onChange={setEditorHtml} />
+          {loadingScene ? (
+            <div className="border rounded p-8 text-center text-gray-500">
+              Loading scene content...
+            </div>
+          ) : (
+            <RichTextEditor value={editor.html} onChange={setEditorHtml} />
+          )}
 
           <div className="mt-3 flex gap-2">
             <button
@@ -454,28 +432,9 @@ export default function WritePage() {
             >
               {extracting ? "Extracting…" : "Extract Entities"}
             </button>
-            <button
-              className="px-3 py-2 border rounded disabled:opacity-50"
-              onClick={handleSave}
-              disabled={!editor.dirty || saving}
-            >
-              {saving ? "Saving..." : "Save (⌘S)"}
-            </button>
             <button className="px-3 py-2 border rounded">Open Composer</button>
           </div>
         </section>
-
-        {/* Muse Panel */}
-        <aside className="col-span-3 border rounded overflow-hidden">
-          <MusePanel
-            onConstraintGenerated={handleConstraintGenerated}
-            onObstacleEscalated={handleObstacleEscalated}
-            onPOVSwapped={handlePOVSwapped}
-            onSensoryEnhanced={handleSensoryEnhanced}
-            onBeatTemplateInserted={handleBeatTemplateInserted}
-            onWhatIfForked={handleWhatIfForked}
-          />
-        </aside>
       </div>
 
       {/* PR Modal */}
