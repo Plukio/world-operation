@@ -11,10 +11,29 @@
     "format": "prettier --write \"src/**/*.{ts,tsx}\""
   },
   "dependencies": {
+    "@tanstack/react-query": "^5.0.0",
+    "@tiptap/extension-blockquote": "^3.4.4",
+    "@tiptap/extension-bold": "^3.4.4",
+    "@tiptap/extension-bullet-list": "^3.4.4",
+    "@tiptap/extension-code": "^3.4.4",
+    "@tiptap/extension-code-block-lowlight": "^3.4.4",
+    "@tiptap/extension-heading": "^3.4.4",
+    "@tiptap/extension-highlight": "^3.4.4",
+    "@tiptap/extension-history": "^3.4.4",
+    "@tiptap/extension-horizontal-rule": "^3.4.4",
+    "@tiptap/extension-italic": "^3.4.4",
+    "@tiptap/extension-link": "^3.4.4",
+    "@tiptap/extension-list-item": "^3.4.4",
+    "@tiptap/extension-ordered-list": "^3.4.4",
+    "@tiptap/extension-strike": "^3.4.4",
+    "@tiptap/extension-underline": "^3.4.4",
+    "@tiptap/react": "^3.4.4",
+    "@tiptap/starter-kit": "^3.4.4",
+    "axios": "^1.6.0",
+    "lowlight": "^3.3.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "axios": "^1.6.0",
-    "@tanstack/react-query": "^5.0.0"
+    "react-router-dom": "^7.9.1"
   },
   "devDependencies": {
     "@types/react": "^18.2.43",

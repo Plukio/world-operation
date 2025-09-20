@@ -2,6 +2,10 @@
 @tailwind components;
 @tailwind utilities;
 
+.prose p {
+  margin: 0.75rem 0;
+}
+
 body {
   margin: 0;
   font-family:
