@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
   backend:
@@ -14,74 +14,74 @@ jobs:
         python-version: [3.11]
 
     steps:
-    - uses: actions/checkout@v4
-    
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v4
-      with:
-        python-version: ${{ matrix.python-version }}
-    
-    - name: Install uv
-      uses: astral-sh/setup-uv@v3
-      with:
-        version: "latest"
-    
-    - name: Install dependencies
-      run: |
-        cd backend
-        uv venv
-        uv sync --extra dev
-    
-    - name: Lint with ruff
-      run: |
-        cd backend
-        uv run ruff check .
-    
-    - name: Format check with black
-      run: |
-        cd backend
-        uv run black --check .
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          version: "latest"
+
+      - name: Install dependencies
+        run: |
+          cd backend
+          uv venv
+          uv sync --extra dev
+
+      - name: Lint with ruff
+        run: |
+          cd backend
+          uv run ruff check .
+
+      - name: Format check with black
+        run: |
+          cd backend
+          uv run black --check .
 
   frontend:
     runs-on: ubuntu-latest
-    
+
     steps:
-    - uses: actions/checkout@v4
-    
-    - name: Set up Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '20'
-    
-    - name: Set up pnpm
-      uses: pnpm/action-setup@v4
-      with:
-        version: 8
-    
-    - name: Get pnpm store directory
-      shell: bash
-      run: |
-        echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
-    
-    - name: Setup pnpm cache
-      uses: actions/cache@v4
-      with:
-        path: ${{ env.STORE_PATH }}
-        key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-        restore-keys: |
-          ${{ runner.os }}-pnpm-store-
-    
-    - name: Install dependencies
-      run: |
-        cd frontend
-        pnpm install --frozen-lockfile
-    
-    - name: Lint
-      run: |
-        cd frontend
-        pnpm run lint
-    
-    - name: Build
-      run: |
-        cd frontend
-        pnpm run build
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 8
+
+      - name: Get pnpm store directory
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        run: |
+          cd frontend
+          pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: |
+          cd frontend
+          pnpm run lint
+
+      - name: Build
+        run: |
+          cd frontend
+          pnpm run build

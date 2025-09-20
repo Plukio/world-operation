@@ -5,6 +5,7 @@ A full-stack application for entity extraction and scene generation using OpenAI
 ## Quickstart
 
 ### Prerequisites
+
 - Node.js ≥ 20
 - Python 3.11
 - Docker
@@ -13,11 +14,13 @@ A full-stack application for entity extraction and scene generation using OpenAI
 ### Run the application
 
 1. Start PostgreSQL:
+
 ```bash
 cd infra && docker compose up -d && cd ..
 ```
 
 2. Start the backend:
+
 ```bash
 cd backend && python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt && cp .env.example .env
@@ -26,6 +29,7 @@ uvicorn app.main:app --reload
 ```
 
 3. Start the frontend (in another terminal):
+
 ```bash
 cd frontend && pnpm i && cp .env.example .env && pnpm dev
 ```
@@ -42,6 +46,7 @@ curl -X POST http://localhost:8000/api/extract \
 ### Example .env values
 
 **Backend (.env):**
+
 ```
 DATABASE_URL=postgresql+psycopg://wo:wo@localhost:5432/worldop
 OPENAI_API_KEY=sk-your-openai-api-key-here
@@ -50,6 +55,7 @@ API_KEY=dev-key
 ```
 
 **Frontend (.env):**
+
 ```
 VITE_API_BASE=http://localhost:8000
 VITE_API_KEY=dev-key
@@ -71,6 +77,7 @@ VITE_API_KEY=dev-key
 ## Development
 
 ### Backend Commands
+
 ```bash
 cd backend
 make dev          # Start development server
@@ -79,6 +86,7 @@ make run          # Start production server
 ```
 
 ### Frontend Commands
+
 ```bash
 cd frontend
 pnpm dev          # Start development server

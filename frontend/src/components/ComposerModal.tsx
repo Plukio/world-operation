@@ -1,22 +1,25 @@
-import React, { useState } from 'react';
-import { api } from '../lib/api';
+import React, { useState } from "react";
+import { api } from "../lib/api";
 
 interface ComposerModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-export const ComposerModal: React.FC<ComposerModalProps> = ({ isOpen, onClose }) => {
-  const [pov, setPov] = useState('');
-  const [location, setLocation] = useState('');
-  const [keywords, setKeywords] = useState('');
+export const ComposerModal: React.FC<ComposerModalProps> = ({
+  isOpen,
+  onClose,
+}) => {
+  const [pov, setPov] = useState("");
+  const [location, setLocation] = useState("");
+  const [keywords, setKeywords] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedScenes, setGeneratedScenes] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   const handleGenerate = async () => {
     if (!pov.trim() || !location.trim() || !keywords.trim()) {
-      setError('Please fill in all fields');
+      setError("Please fill in all fields");
       return;
     }
 
@@ -32,17 +35,17 @@ export const ComposerModal: React.FC<ComposerModalProps> = ({ isOpen, onClose })
       });
       setGeneratedScenes(scenes);
     } catch (err) {
-      setError('Failed to generate scenes. Please try again.');
-      console.error('Generation error:', err);
+      setError("Failed to generate scenes. Please try again.");
+      console.error("Generation error:", err);
     } finally {
       setIsGenerating(false);
     }
   };
 
   const handleClose = () => {
-    setPov('');
-    setLocation('');
-    setKeywords('');
+    setPov("");
+    setLocation("");
+    setKeywords("");
     setGeneratedScenes([]);
     setError(null);
     onClose();
@@ -108,10 +111,15 @@ export const ComposerModal: React.FC<ComposerModalProps> = ({ isOpen, onClose })
           <div className="flex justify-center mb-6">
             <button
               onClick={handleGenerate}
-              disabled={isGenerating || !pov.trim() || !location.trim() || !keywords.trim()}
+              disabled={
+                isGenerating ||
+                !pov.trim() ||
+                !location.trim() ||
+                !keywords.trim()
+              }
               className="px-8 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
             >
-              {isGenerating ? 'Generating...' : 'Generate 3 Variants'}
+              {isGenerating ? "Generating..." : "Generate 3 Variants"}
             </button>
           </div>
 
@@ -123,15 +131,26 @@ export const ComposerModal: React.FC<ComposerModalProps> = ({ isOpen, onClose })
 
           {generatedScenes.length > 0 && (
             <div className="space-y-6">
-              <h3 className="text-xl font-semibold text-gray-900">Generated Scenes</h3>
+              <h3 className="text-xl font-semibold text-gray-900">
+                Generated Scenes
+              </h3>
               {generatedScenes.map((scene, index) => (
-                <div key={index} className="border border-gray-200 rounded-lg p-6">
+                <div
+                  key={index}
+                  className="border border-gray-200 rounded-lg p-6"
+                >
                   <div className="flex justify-between items-center mb-4">
-                    <h4 className="text-lg font-medium text-gray-900">Variant {index + 1}</h4>
-                    <span className="text-sm text-gray-500">{scene.length} characters</span>
+                    <h4 className="text-lg font-medium text-gray-900">
+                      Variant {index + 1}
+                    </h4>
+                    <span className="text-sm text-gray-500">
+                      {scene.length} characters
+                    </span>
                   </div>
                   <div className="prose max-w-none">
-                    <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">{scene}</p>
+                    <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
+                      {scene}
+                    </p>
                   </div>
                 </div>
               ))}
