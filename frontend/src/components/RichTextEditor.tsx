@@ -16,6 +16,7 @@ import { useEffect } from "react";
 interface Props {
   value: string;
   onChange: (val: string) => void;
+  placeholder?: string;
 }
 
 export default function RichTextEditor({ value, onChange }: Props) {

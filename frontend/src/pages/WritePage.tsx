@@ -1,5 +1,5 @@
-import SimpleLayout from "../components/SimpleLayout";
+import StoryLayout from "../components/StoryLayout";
 
 export default function WritePage() {
-  return <SimpleLayout />;
+  return <StoryLayout />;
 }
