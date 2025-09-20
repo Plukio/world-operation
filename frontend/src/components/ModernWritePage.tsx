@@ -132,6 +132,11 @@ export default function ModernWritePage({ className = '' }: ModernWritePageProps
     }
   }, [selectedSceneId]);
 
+  // Debug entities state
+  useEffect(() => {
+    console.log('🎭 Entities state changed - sceneEntities:', sceneEntities, 'sceneExtraction:', sceneExtraction);
+  }, [sceneEntities, sceneExtraction]);
+
   const handleSceneSelect = async (sceneId: string) => {
     // Save current scene before switching
     if (selectedSceneId && hasUnsavedChanges) {
@@ -163,12 +168,15 @@ export default function ModernWritePage({ className = '' }: ModernWritePageProps
 
   const loadSceneEntities = async (sceneId: string) => {
     try {
+      console.log('🔄 Loading scene entities for scene:', sceneId);
       const entities = await firebaseService.getSceneEntities(sceneId);
       const extraction = await firebaseService.getSceneExtraction(sceneId);
+      console.log('📊 Loaded entities:', entities);
+      console.log('📊 Loaded extraction:', extraction);
       setSceneEntities(entities);
       setSceneExtraction(extraction);
     } catch (error) {
-      console.error('Error loading scene entities:', error);
+      console.error('❌ Error loading scene entities:', error);
       setSceneEntities([]);
       setSceneExtraction(null);
     }
@@ -634,6 +642,28 @@ export default function ModernWritePage({ className = '' }: ModernWritePageProps
                       </button>
                     </div>
                   </div>
+
+                  {/* Debug: Show all entities if no grouped entities */}
+                  {sceneEntities.length > 0 && sceneEntities.every(entity => !['character', 'place', 'event', 'object', 'relationship'].includes(entity.entity_type)) && (
+                    <div className="p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
+                      <h4 className="font-medium text-yellow-900 dark:text-yellow-100 mb-2">All Entities</h4>
+                      <div className="space-y-2">
+                        {sceneEntities.map((entity) => (
+                          <div key={entity.id} className="flex items-start space-x-2 p-2 bg-white dark:bg-gray-800 rounded border">
+                            <div className="w-4 h-4 bg-gray-500 rounded-full flex items-center justify-center text-white text-xs">?</div>
+                            <div className="flex-1">
+                              <div className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                                {entity.entity_name} ({entity.entity_type})
+                              </div>
+                              <div className="text-xs text-gray-500 dark:text-gray-400">
+                                {entity.description}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
                   {/* Group entities by type */}
                   {['character', 'place', 'event', 'object', 'relationship'].map(type => {
