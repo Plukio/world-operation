@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react';
 import { 
-  Zap, 
-  Users, 
   MapPin, 
   Calendar, 
   Eye,
   EyeOff,
   Type,
-  Save
+  Save,
+  PanelLeft,
+  PanelRight,
+  Sparkles
 } from 'lucide-react';
 import ModernStoryStructure from './ModernStoryStructure';
 import ModernEditor from './ModernEditor';
@@ -50,7 +51,8 @@ export default function ModernWritePage({ className = '' }: ModernWritePageProps
   const [isTypewriterMode, setIsTypewriterMode] = useState(false);
   const [isFocusMode, setIsFocusMode] = useState(false);
   const [showRightPane, setShowRightPane] = useState(true);
-  const [activeTab, setActiveTab] = useState<'entities' | 'muse'>('entities');
+  const [showLeftPane, setShowLeftPane] = useState(true);
+  const [isExtractingEntities, setIsExtractingEntities] = useState(false);
   
   // Story structure data for breadcrumbs
   const [nodes, setNodes] = useState<StoryNode[]>([]);
@@ -162,6 +164,30 @@ export default function ModernWritePage({ className = '' }: ModernWritePageProps
     setHasUnsavedChanges(true);
   };
 
+  const handleExtractEntities = async () => {
+    if (!selectedSceneId || !sceneContent.trim()) {
+      alert('Please select a scene with content to extract entities from.');
+      return;
+    }
+
+    setIsExtractingEntities(true);
+    try {
+      // TODO: Implement OpenAI API call to extract entities
+      console.log('Extracting entities from scene:', selectedSceneId, sceneContent);
+      
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // For now, just show a success message
+      alert('Entities extracted successfully! (This is a placeholder - implement OpenAI integration)');
+    } catch (error) {
+      console.error('Error extracting entities:', error);
+      alert('Failed to extract entities. Please try again.');
+    } finally {
+      setIsExtractingEntities(false);
+    }
+  };
+
   const handleSave = async () => {
     if (!selectedSceneId) return;
     
@@ -209,7 +235,7 @@ export default function ModernWritePage({ className = '' }: ModernWritePageProps
   return (
     <div className={`h-full flex ${className}`}>
       {/* Left Pane - Story Structure */}
-      {!isFocusMode && (
+      {!isFocusMode && showLeftPane && (
         <ResizablePane side="left" initialWidth={320} minWidth={250} maxWidth={500}>
           <ModernStoryStructure
             onSceneSelect={handleSceneSelect}
@@ -272,6 +298,30 @@ export default function ModernWritePage({ className = '' }: ModernWritePageProps
 
           {/* Right Actions */}
           <div className="flex items-center space-x-2">
+            {/* Sidebar Toggles */}
+            <button
+              onClick={() => setShowLeftPane(!showLeftPane)}
+              className={`p-2 rounded-lg transition-colors ${
+                showLeftPane
+                  ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300'
+                  : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700'
+              }`}
+              title="Toggle Story Structure"
+            >
+              <PanelLeft className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => setShowRightPane(!showRightPane)}
+              className={`p-2 rounded-lg transition-colors ${
+                showRightPane
+                  ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300'
+                  : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700'
+              }`}
+              title="Toggle Entities Panel"
+            >
+              <PanelRight className="w-4 h-4" />
+            </button>
+
             {/* Mode Toggles */}
             <button
               onClick={toggleTypewriterMode}
@@ -369,95 +419,67 @@ export default function ModernWritePage({ className = '' }: ModernWritePageProps
       {showRightPane && !isFocusMode && (
         <ResizablePane side="right" initialWidth={300} minWidth={250} maxWidth={400}>
           <div className="h-full flex flex-col">
-            {/* Tabs */}
-            <div className="flex border-b border-gray-200 dark:border-gray-700">
-              <button
-                onClick={() => setActiveTab('entities')}
-                className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${
-                  activeTab === 'entities'
-                    ? 'text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400'
-                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
-                }`}
-              >
-                Entities
-              </button>
-              <button
-                onClick={() => setActiveTab('muse')}
-                className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${
-                  activeTab === 'muse'
-                    ? 'text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400'
-                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
-                }`}
-              >
-                Muse
-              </button>
+            {/* Header */}
+            <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+              <div className="flex items-center justify-between">
+                <h3 className="font-medium text-gray-900 dark:text-white">Entities</h3>
+                <button
+                  onClick={handleExtractEntities}
+                  disabled={isExtractingEntities || !selectedSceneId || !sceneContent.trim()}
+                  className={`flex items-center space-x-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                    isExtractingEntities || !selectedSceneId || !sceneContent.trim()
+                      ? 'bg-gray-100 text-gray-400 dark:bg-gray-700 dark:text-gray-500 cursor-not-allowed'
+                      : 'bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600'
+                  }`}
+                  title="Extract entities from current scene using AI"
+                >
+                  <Sparkles className="w-4 h-4" />
+                  <span>{isExtractingEntities ? 'Extracting...' : 'Extract'}</span>
+                </button>
+              </div>
             </div>
 
-            {/* Tab Content */}
+            {/* Content */}
             <div className="flex-1 overflow-y-auto p-4">
-              {activeTab === 'entities' ? (
-                <div className="space-y-4">
-                  <div>
-                    <h3 className="font-medium text-gray-900 dark:text-white mb-3">Characters</h3>
-                    <div className="space-y-2">
-                      <div className="flex items-center space-x-2 p-2 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                        <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs font-medium">
-                          J
-                        </div>
-                        <span className="text-sm text-gray-700 dark:text-gray-300">John Doe</span>
+              <div className="space-y-4">
+                <div>
+                  <h4 className="font-medium text-gray-900 dark:text-white mb-3">Characters</h4>
+                  <div className="space-y-2">
+                    <div className="flex items-center space-x-2 p-2 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                      <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs font-medium">
+                        J
                       </div>
-                      <div className="flex items-center space-x-2 p-2 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                        <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center text-white text-xs font-medium">
-                          S
-                        </div>
-                        <span className="text-sm text-gray-700 dark:text-gray-300">Sarah Smith</span>
-                      </div>
+                      <span className="text-sm text-gray-700 dark:text-gray-300">John Doe</span>
                     </div>
-                  </div>
-
-                  <div>
-                    <h3 className="font-medium text-gray-900 dark:text-white mb-3">Places</h3>
-                    <div className="space-y-2">
-                      <div className="flex items-center space-x-2 p-2 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                        <MapPin className="w-4 h-4 text-red-500" />
-                        <span className="text-sm text-gray-700 dark:text-gray-300">Central Park</span>
+                    <div className="flex items-center space-x-2 p-2 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                      <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center text-white text-xs font-medium">
+                        S
                       </div>
-                    </div>
-                  </div>
-
-                  <div>
-                    <h3 className="font-medium text-gray-900 dark:text-white mb-3">Events</h3>
-                    <div className="space-y-2">
-                      <div className="flex items-center space-x-2 p-2 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                        <Calendar className="w-4 h-4 text-orange-500" />
-                        <span className="text-sm text-gray-700 dark:text-gray-300">The Meeting</span>
-                      </div>
+                      <span className="text-sm text-gray-700 dark:text-gray-300">Sarah Smith</span>
                     </div>
                   </div>
                 </div>
-              ) : (
-                <div className="space-y-4">
-                  <div>
-                    <h3 className="font-medium text-gray-900 dark:text-white mb-3">Quick Tools</h3>
-                    <div className="space-y-2">
-                      <button className="w-full p-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:from-purple-600 hover:to-pink-600 transition-all">
-                        <div className="flex items-center space-x-2">
-                          <Zap className="w-4 h-4" />
-                          <span className="font-medium">Muse Dice</span>
-                        </div>
-                        <p className="text-xs opacity-90 mt-1">Generate random inspiration</p>
-                      </button>
-                      <button className="w-full p-3 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-lg hover:from-blue-600 hover:to-cyan-600 transition-all">
-                        <div className="flex items-center space-x-2">
-                          <Users className="w-4 h-4" />
-                          <span className="font-medium">POV Swap</span>
-                        </div>
-                        <p className="text-xs opacity-90 mt-1">Switch perspective</p>
-                      </button>
+
+                <div>
+                  <h4 className="font-medium text-gray-900 dark:text-white mb-3">Places</h4>
+                  <div className="space-y-2">
+                    <div className="flex items-center space-x-2 p-2 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                      <MapPin className="w-4 h-4 text-red-500" />
+                      <span className="text-sm text-gray-700 dark:text-gray-300">Central Park</span>
                     </div>
                   </div>
                 </div>
-              )}
+
+                <div>
+                  <h4 className="font-medium text-gray-900 dark:text-white mb-3">Events</h4>
+                  <div className="space-y-2">
+                    <div className="flex items-center space-x-2 p-2 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                      <Calendar className="w-4 h-4 text-orange-500" />
+                      <span className="text-sm text-gray-700 dark:text-gray-300">The Meeting</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </ResizablePane>
