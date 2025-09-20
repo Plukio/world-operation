@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { api } from "../lib/api";
 
 interface ComposerModalProps {
@@ -6,10 +6,7 @@ interface ComposerModalProps {
   onClose: () => void;
 }
 
-export const ComposerModal: React.FC<ComposerModalProps> = ({
-  isOpen,
-  onClose,
-}) => {
+export const ComposerModal = ({ isOpen, onClose }: ComposerModalProps) => {
   const [pov, setPov] = useState("");
   const [location, setLocation] = useState("");
   const [keywords, setKeywords] = useState("");

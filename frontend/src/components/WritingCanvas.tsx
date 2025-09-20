@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { api } from "../lib/api";
 import type { ExtractionResult } from "../types";
 
@@ -6,9 +6,7 @@ interface WritingCanvasProps {
   onExtractionComplete?: (result: ExtractionResult) => void;
 }
 
-export const WritingCanvas: React.FC<WritingCanvasProps> = ({
-  onExtractionComplete,
-}) => {
+export const WritingCanvas = ({ onExtractionComplete }: WritingCanvasProps) => {
   const [sceneText, setSceneText] = useState("");
   const [isExtracting, setIsExtracting] = useState(false);
   const [extractionResult, setExtractionResult] =
