@@ -104,17 +104,17 @@ export default function WorkingStoryStructure({ onSceneSelect }: StoryStructureP
     }
   };
 
-  // Create a new chapter
-  const handleCreateChapter = async (parentId: string) => {
-    const title = prompt('Enter chapter name:');
+  // Create a new episode
+  const handleCreateEpisode = async (parentId: string) => {
+    const title = prompt('Enter episode name:');
     if (!title?.trim()) return;
 
     setLoading(true);
     try {
-      console.log('Creating chapter:', title);
+      console.log('Creating episode:', title);
       const docRef = await addDoc(collection(db, 'storyNodes'), {
         repo_id: 'default-repo',
-        kind: 'chapter',
+        kind: 'episode',
         title: title.trim(),
         parent_id: parentId,
         order_idx: nodes.filter(n => n.parent_id === parentId).length,
@@ -122,11 +122,11 @@ export default function WorkingStoryStructure({ onSceneSelect }: StoryStructureP
         updatedAt: new Date()
       });
       
-      console.log('Chapter created with ID:', docRef.id);
+      console.log('Episode created with ID:', docRef.id);
       await loadData(); // Reload data
     } catch (error) {
-      console.error('Error creating chapter:', error);
-      alert('Failed to create chapter: ' + (error instanceof Error ? error.message : String(error)));
+      console.error('Error creating episode:', error);
+      alert('Failed to create episode: ' + (error instanceof Error ? error.message : String(error)));
     } finally {
       setLoading(false);
     }
@@ -234,22 +234,22 @@ export default function WorkingStoryStructure({ onSceneSelect }: StoryStructureP
     return scenes.filter(scene => scene.node_id === nodeId);
   };
 
-  // Get chapters for an epic
-  const getChaptersForEpic = (epicId: string) => {
-    return nodes.filter(node => node.kind === 'chapter' && node.parent_id === epicId);
+  // Get episodes for an epic
+  const getEpisodesForEpic = (epicId: string) => {
+    return nodes.filter(node => node.kind === 'episode' && node.parent_id === epicId);
   };
 
-  // Render a story node (epic or chapter)
+  // Render a story node (epic or episode)
   const renderNode = (node: StoryNode) => {
     const isExpanded = expandedNodes.has(node.id);
-    const chapters = node.kind === 'epic' ? getChaptersForEpic(node.id) : [];
+    const episodes = node.kind === 'epic' ? getEpisodesForEpic(node.id) : [];
     const nodeScenes = getScenesForNode(node.id);
 
     return (
       <div key={node.id} className="mb-2">
         <div className="flex items-center space-x-2 group">
           {/* Expand/Collapse Button */}
-          {(chapters.length > 0 || nodeScenes.length > 0) && (
+          {(episodes.length > 0 || nodeScenes.length > 0) && (
             <button
               onClick={() => toggleNode(node.id)}
               className="w-4 h-4 flex items-center justify-center text-gray-400 hover:text-gray-600"
@@ -259,7 +259,7 @@ export default function WorkingStoryStructure({ onSceneSelect }: StoryStructureP
           )}
           
           {/* Node Icon */}
-          <div className={`w-3 h-3 rounded-full ${node.kind === 'epic' ? 'bg-blue-600' : 'bg-green-600'}`}></div>
+          <div className={`w-3 h-3 rounded-full ${node.kind === 'epic' ? 'bg-blue-600' : 'bg-purple-600'}`}></div>
           
           {/* Node Title */}
           {editingItem?.type === 'node' && editingItem.id === node.id ? (
@@ -289,16 +289,16 @@ export default function WorkingStoryStructure({ onSceneSelect }: StoryStructureP
           <div className="opacity-0 group-hover:opacity-100 flex space-x-1">
             {node.kind === 'epic' && (
               <button
-                onClick={() => handleCreateChapter(node.id)}
-                className="text-xs text-green-600 hover:text-green-700"
-                title="Add Chapter"
+                onClick={() => handleCreateEpisode(node.id)}
+                className="text-xs text-purple-600 hover:text-purple-700"
+                title="Add Episode"
               >
-                +C
+                +E
               </button>
             )}
             <button
               onClick={() => handleCreateScene(node.id)}
-              className="text-xs text-blue-600 hover:text-blue-700"
+              className="text-xs text-orange-600 hover:text-orange-700"
               title="Add Scene"
             >
               +S
@@ -323,8 +323,8 @@ export default function WorkingStoryStructure({ onSceneSelect }: StoryStructureP
         {/* Expanded Content */}
         {isExpanded && (
           <div className="ml-6 mt-2 space-y-1">
-            {/* Chapters (for epics) */}
-            {chapters.map(chapter => renderNode(chapter))}
+            {/* Episodes (for epics) */}
+            {episodes.map(episode => renderNode(episode))}
             
             {/* Scenes */}
             {nodeScenes.map(scene => (
@@ -433,7 +433,7 @@ export default function WorkingStoryStructure({ onSceneSelect }: StoryStructureP
         <div>Nodes: {nodes.length}</div>
         <div>Scenes: {scenes.length}</div>
         <div>Epics: {nodes.filter(n => n.kind === 'epic').length}</div>
-        <div>Chapters: {nodes.filter(n => n.kind === 'chapter').length}</div>
+        <div>Episodes: {nodes.filter(n => n.kind === 'episode').length}</div>
       </div>
     </div>
   );
