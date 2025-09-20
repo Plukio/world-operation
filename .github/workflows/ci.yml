@@ -32,12 +32,12 @@ jobs:
     - name: Lint with ruff
       run: |
         cd backend
-        ruff check .
+        python -m ruff check .
     
     - name: Format check with black
       run: |
         cd backend
-        black --check .
+        python -m black --check .
 
   frontend:
     runs-on: ubuntu-latest
