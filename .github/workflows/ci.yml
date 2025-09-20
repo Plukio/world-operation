@@ -116,6 +116,8 @@ jobs:
         run: |
           cd frontend
           pnpm install --frozen-lockfile
+          pnpm list @typescript-eslint/eslint-plugin @typescript-eslint/parser
+          ls -la node_modules/@typescript-eslint/
 
       - name: Lint
         run: |
