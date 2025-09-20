@@ -6,9 +6,6 @@ import {
   MoreHorizontal, 
   Edit3, 
   Trash2, 
-  Circle,
-  CheckCircle,
-  AlertCircle,
   Crown,
   BookMarked,
   ScrollText
@@ -267,19 +264,6 @@ export default function ModernStoryStructure({ onSceneSelect, onClearSelection, 
     return scenes.filter(scene => scene.node_id === episodeId);
   };
 
-  const getSceneStatus = (_sceneId: string) => {
-    // TODO: Implement actual status checking
-    return 'saved'; // 'saved' | 'unsaved' | 'error'
-  };
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'saved': return <CheckCircle className="w-3 h-3 text-green-500" />;
-      case 'unsaved': return <Circle className="w-3 h-3 text-orange-500" />;
-      case 'error': return <AlertCircle className="w-3 h-3 text-red-500" />;
-      default: return <Circle className="w-3 h-3 text-gray-400" />;
-    }
-  };
 
   if (isLoading) {
     return (
@@ -448,7 +432,6 @@ export default function ModernStoryStructure({ onSceneSelect, onClearSelection, 
                                           }}
                                         >
                                           <ScrollText className="w-3 h-3 text-purple-500" />
-                                          {getStatusIcon(getSceneStatus(scene.id))}
                                           <span className="flex-1 text-sm text-gray-600 dark:text-gray-400">
                                             {scene.title}
                                           </span>
