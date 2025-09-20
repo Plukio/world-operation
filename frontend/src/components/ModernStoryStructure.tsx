@@ -244,17 +244,37 @@ export default function ModernStoryStructure({ onSceneSelect, onClearSelection, 
     e.stopPropagation();
     const rect = e.currentTarget.getBoundingClientRect();
     console.log('🎯 Floating actions triggered for:', item.title, item.id);
+    
+    // Position the floating actions to the left of the button to avoid going off-screen
+    const x = Math.max(10, rect.left - 200); // 200px width of floating actions
+    const y = rect.top;
+    
     setFloatingActions({ 
       id: item.id, 
       type: 'title' in item ? 'node' : 'scene', 
-      x: rect.right + 5, 
-      y: rect.top 
+      x, 
+      y 
     });
   };
 
   const closeFloatingActions = () => {
     setFloatingActions(null);
   };
+
+  // Close floating actions when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (floatingActions) {
+        const target = event.target as Element;
+        if (!target.closest('.floating-actions') && !target.closest('[data-floating-trigger]')) {
+          closeFloatingActions();
+        }
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [floatingActions]);
 
   const getEpisodesForEpic = (epicId: string) => {
     return nodes.filter(node => node.parent_id === epicId && node.kind === 'episode');
@@ -354,7 +374,9 @@ export default function ModernStoryStructure({ onSceneSelect, onClearSelection, 
                       </button>
                       <button
                         onClick={(e) => handleFloatingActions(e, epic)}
-                        className="opacity-0 group-hover:opacity-100 p-1 hover:bg-gray-200 dark:hover:bg-gray-600 rounded text-gray-500 hover:text-gray-700 dark:hover:text-gray-200 transition-opacity"
+                        data-floating-trigger
+                        className="opacity-60 hover:opacity-100 p-1 hover:bg-gray-200 dark:hover:bg-gray-600 rounded text-gray-500 hover:text-gray-700 dark:hover:text-gray-200 transition-opacity"
+                        title="More actions"
                       >
                         <MoreHorizontal className="w-3 h-3" />
                       </button>
@@ -406,7 +428,9 @@ export default function ModernStoryStructure({ onSceneSelect, onClearSelection, 
                                   </button>
                                   <button
                                     onClick={(e) => handleFloatingActions(e, episode)}
-                                    className="opacity-0 group-hover:opacity-100 p-1 hover:bg-gray-200 dark:hover:bg-gray-600 rounded text-gray-500 hover:text-gray-700 dark:hover:text-gray-200 transition-opacity"
+                                    data-floating-trigger
+                                    className="opacity-60 hover:opacity-100 p-1 hover:bg-gray-200 dark:hover:bg-gray-600 rounded text-gray-500 hover:text-gray-700 dark:hover:text-gray-200 transition-opacity"
+                                    title="More actions"
                                   >
                                     <MoreHorizontal className="w-3 h-3" />
                                   </button>
@@ -437,7 +461,9 @@ export default function ModernStoryStructure({ onSceneSelect, onClearSelection, 
                                           </span>
                                           <button
                                             onClick={(e) => handleFloatingActions(e, scene)}
-                                            className="opacity-0 group-hover:opacity-100 p-1 hover:bg-gray-200 dark:hover:bg-gray-600 rounded text-gray-500 hover:text-gray-700 dark:hover:text-gray-200 transition-opacity"
+                                            data-floating-trigger
+                                            className="opacity-60 hover:opacity-100 p-1 hover:bg-gray-200 dark:hover:bg-gray-600 rounded text-gray-500 hover:text-gray-700 dark:hover:text-gray-200 transition-opacity"
+                                            title="More actions"
                                           >
                                             <MoreHorizontal className="w-3 h-3" />
                                           </button>
@@ -494,7 +520,7 @@ export default function ModernStoryStructure({ onSceneSelect, onClearSelection, 
       {/* Floating Actions */}
       {floatingActions && (
         <div
-          className="fixed z-50 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg py-1 flex"
+          className="floating-actions fixed z-50 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg py-1 flex"
           style={{ left: floatingActions.x, top: floatingActions.y }}
           onMouseLeave={closeFloatingActions}
         >
