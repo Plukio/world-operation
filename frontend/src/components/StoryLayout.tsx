@@ -121,23 +121,38 @@ export default function StoryLayout() {
         {/* Modern Editor Area */}
         <div className="flex-1 p-8">
           {selectedSceneId ? (
-            <div className="h-full">
-              {isLoading ? (
-                <div className="h-full flex items-center justify-center">
-                  <div className="text-center">
-                    <div className="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-4"></div>
-                    <div className="text-gray-600 font-medium">Loading your creative space...</div>
+            <div className="h-full flex flex-col space-y-4">
+              {/* Scene Content Test Panel */}
+              <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-lg border border-white/20 p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="font-semibold text-gray-900">Scene Content Test</h3>
+                  <div className="text-xs text-gray-500 font-mono">ID: {selectedSceneId}</div>
+                </div>
+                <div className="text-sm text-gray-600">
+                  Content Length: {sceneContent.length} characters | 
+                  Last Saved: {lastSaved ? lastSaved.toLocaleTimeString() : 'Never'}
+                </div>
+              </div>
+              
+              {/* Main Editor */}
+              <div className="flex-1">
+                {isLoading ? (
+                  <div className="h-full flex items-center justify-center">
+                    <div className="text-center">
+                      <div className="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-4"></div>
+                      <div className="text-gray-600 font-medium">Loading your creative space...</div>
+                    </div>
                   </div>
-                </div>
-              ) : (
-                <div className="h-full bg-white/70 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 overflow-hidden">
-                  <RichTextEditor
-                    value={sceneContent}
-                    onChange={handleEditorChange}
-                    placeholder="✨ Begin your story here... Let your imagination flow freely..."
-                  />
-                </div>
-              )}
+                ) : (
+                  <div className="h-full bg-white/70 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 overflow-hidden">
+                    <RichTextEditor
+                      value={sceneContent}
+                      onChange={handleEditorChange}
+                      placeholder="✨ Begin your story here... Let your imagination flow freely..."
+                    />
+                  </div>
+                )}
+              </div>
             </div>
           ) : (
             <div className="h-full flex items-center justify-center">
