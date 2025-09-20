@@ -14,14 +14,22 @@ export default function AppLayout() {
           >
             Write
           </NavLink>
-          <NavLink
-            to="/entities"
-            className={({ isActive }) =>
-              `px-3 py-1 rounded ${isActive ? "bg-black text-white" : "hover:bg-gray-100"}`
-            }
-          >
-            Entities
-          </NavLink>
+                <NavLink
+                  to="/entities"
+                  className={({ isActive }) =>
+                    `px-3 py-1 rounded ${isActive ? "bg-black text-white" : "hover:bg-gray-100"}`
+                  }
+                >
+                  Entities
+                </NavLink>
+                <NavLink
+                  to="/commits"
+                  className={({ isActive }) =>
+                    `px-3 py-1 rounded ${isActive ? "bg-black text-white" : "hover:bg-gray-100"}`
+                  }
+                >
+                  Commits
+                </NavLink>
         </nav>
       </header>
       <main className="flex-1">

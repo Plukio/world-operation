@@ -4,6 +4,7 @@ import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import AppLayout from "./pages/AppLayout";
 import WritePage from "./pages/WritePage";
 import EntitiesPage from "./pages/EntitiesPage";
+import CommitsPage from "./pages/CommitsPage";
 import "./index.css";
 
 const router = createBrowserRouter([
@@ -13,6 +14,7 @@ const router = createBrowserRouter([
     children: [
       { index: true, element: <WritePage /> },
       { path: "entities", element: <EntitiesPage /> },
+      { path: "commits", element: <CommitsPage /> },
     ],
   },
 ]);

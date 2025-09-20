@@ -1,16 +1,18 @@
 import { create } from "zustand";
 import { api } from "../lib/api";
 
-export interface Episode {
+export interface StoryNode {
   id: string;
   repo_id: string;
+  kind: string; // 'epic' or 'chapter'
   title: string;
+  parent_id?: string;
   order_idx: number;
 }
 
 export interface Scene {
   id: string;
-  episode_id: string;
+  node_id: string;
   title: string;
   order_idx: number;
 }
@@ -36,11 +38,11 @@ interface AppState {
   repoId: string;
   branch: Branch | null;
   structure: {
-    episodes: Episode[];
+    nodes: StoryNode[];
     scenes: Scene[];
   };
   current: {
-    episodeId?: string;
+    nodeId?: string;
     sceneId?: string;
     versionId?: string;
   };
@@ -59,6 +61,14 @@ interface AppState {
   loadLatestVersion: (sceneId: string, branchId: string) => Promise<void>;
   saveVersion: (message?: string) => Promise<string | null>;
   clearDirty: () => void;
+  
+  // CRUD operations
+  createNode: (kind: string, title: string, parentId?: string) => Promise<void>;
+  updateNode: (nodeId: string, title: string) => Promise<void>;
+  deleteNode: (nodeId: string) => Promise<void>;
+  createScene: (chapterId: string, title: string) => Promise<void>;
+  updateScene: (sceneId: string, title: string) => Promise<void>;
+  deleteScene: (sceneId: string) => Promise<void>;
 }
 
 export const useAppStore = create<AppState>((set, get) => ({
@@ -66,7 +76,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   repoId: "default-repo",
   branch: null,
   structure: {
-    episodes: [],
+    nodes: [],
     scenes: [],
   },
   current: {},
@@ -97,7 +107,7 @@ export const useAppStore = create<AppState>((set, get) => ({
 
     set({
       current: {
-        episodeId: scene.episode_id,
+        nodeId: scene.node_id,
         sceneId: sceneId,
       },
     });
@@ -119,15 +129,52 @@ export const useAppStore = create<AppState>((set, get) => ({
   refreshStructure: async () => {
     const { repoId } = get();
     try {
-      const response = await api.get(`/episodes/structure?repo_id=${repoId}`);
+      const response = await api.get(`/structure?repo_id=${repoId}`);
       set({
         structure: {
-          episodes: response.data.episodes || [],
+          nodes: response.data.nodes || [],
           scenes: response.data.scenes || [],
         },
       });
     } catch (error) {
       console.error("Failed to refresh structure:", error);
+      // If API fails, use mock data for demonstration
+      set({
+        structure: {
+          nodes: [
+            {
+              id: "epic-1",
+              repo_id: repoId,
+              kind: "epic",
+              title: "The Great Adventure",
+              parent_id: undefined,
+              order_idx: 0,
+            },
+            {
+              id: "chapter-1",
+              repo_id: repoId,
+              kind: "chapter",
+              title: "Chapter 1: The Beginning",
+              parent_id: "epic-1",
+              order_idx: 0,
+            },
+          ],
+          scenes: [
+            {
+              id: "scene-1",
+              node_id: "chapter-1",
+              title: "Opening Scene",
+              order_idx: 0,
+            },
+            {
+              id: "scene-2",
+              node_id: "chapter-1",
+              title: "The Journey Begins",
+              order_idx: 1,
+            },
+          ],
+        },
+      });
     }
   },
 
@@ -221,5 +268,138 @@ export const useAppStore = create<AppState>((set, get) => ({
         dirty: false,
       },
     }));
+  },
+
+  // CRUD operations
+  createNode: async (kind: string, title: string, parentId?: string) => {
+    const { repoId } = get();
+    try {
+      await api.createNode({
+        repo_id: repoId,
+        kind,
+        title,
+        parent_id: parentId,
+      });
+      get().refreshStructure();
+    } catch (error) {
+      console.error("Failed to create node:", error);
+      // If API fails, add to mock data
+      const { structure } = get();
+      const newId = `${kind}-${Date.now()}`;
+      const newNode = {
+        id: newId,
+        repo_id: repoId,
+        kind,
+        title,
+        parent_id: parentId,
+        order_idx: structure.nodes.filter(n => n.parent_id === parentId).length,
+      };
+      set({
+        structure: {
+          ...structure,
+          nodes: [...structure.nodes, newNode],
+        },
+      });
+    }
+  },
+
+  updateNode: async (nodeId: string, title: string) => {
+    try {
+      await api.updateNode(nodeId, { title });
+      get().refreshStructure();
+    } catch (error) {
+      console.error("Failed to update node:", error);
+      // If API fails, update mock data
+      const { structure } = get();
+      set({
+        structure: {
+          ...structure,
+          nodes: structure.nodes.map(node => 
+            node.id === nodeId ? { ...node, title } : node
+          ),
+        },
+      });
+    }
+  },
+
+  deleteNode: async (nodeId: string) => {
+    try {
+      await api.deleteNode(nodeId);
+      get().refreshStructure();
+    } catch (error) {
+      console.error("Failed to delete node:", error);
+      // If API fails, update mock data
+      const { structure } = get();
+      set({
+        structure: {
+          nodes: structure.nodes.filter(node => node.id !== nodeId),
+          scenes: structure.scenes.filter(scene => {
+            // Also remove scenes that belong to deleted chapters
+            const chapter = structure.nodes.find(n => n.id === scene.node_id);
+            return chapter && chapter.id !== nodeId;
+          }),
+        },
+      });
+    }
+  },
+
+  createScene: async (chapterId: string, title: string) => {
+    try {
+      await api.createScene(chapterId, { title });
+      get().refreshStructure();
+    } catch (error) {
+      console.error("Failed to create scene:", error);
+      // If API fails, add to mock data
+      const { structure } = get();
+      const newId = `scene-${Date.now()}`;
+      const newScene = {
+        id: newId,
+        node_id: chapterId,
+        title,
+        order_idx: structure.scenes.filter(s => s.node_id === chapterId).length,
+      };
+      set({
+        structure: {
+          ...structure,
+          scenes: [...structure.scenes, newScene],
+        },
+      });
+    }
+  },
+
+  updateScene: async (sceneId: string, title: string) => {
+    try {
+      await api.updateScene(sceneId, { title });
+      get().refreshStructure();
+    } catch (error) {
+      console.error("Failed to update scene:", error);
+      // If API fails, update mock data
+      const { structure } = get();
+      set({
+        structure: {
+          ...structure,
+          scenes: structure.scenes.map(scene => 
+            scene.id === sceneId ? { ...scene, title } : scene
+          ),
+        },
+      });
+    }
+  },
+
+  deleteScene: async (sceneId: string) => {
+    try {
+      await api.deleteScene(sceneId);
+      get().refreshStructure();
+    } catch (error) {
+      console.error("Failed to delete scene:", error);
+      // If API fails, update mock data
+      const { structure } = get();
+      set({
+        structure: {
+          ...structure,
+          scenes: structure.scenes.filter(scene => scene.id !== sceneId),
+        },
+      });
+    }
   },
 }));

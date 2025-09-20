@@ -3,13 +3,51 @@ import RichTextEditor from "../components/RichTextEditor";
 import BranchBar from "../components/BranchBar";
 import MusePanel from "../components/MusePanel";
 import PRModal from "../components/PRModal";
+import CreateEditModal from "../components/CreateEditModal";
+import ContextMenu from "../components/ContextMenu";
+import InlineEdit from "../components/InlineEdit";
 import { useAppStore } from "../store/useAppStore";
 import { api } from "../lib/api";
 
 export default function WritePage() {
   const [activeTab, setActiveTab] = useState<"episode" | "scene">("episode");
   const [extracting, setExtracting] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [showPRModal, setShowPRModal] = useState(false);
+  
+  // CRUD modal states
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [modalConfig, setModalConfig] = useState<{
+    type: "epic" | "chapter" | "scene";
+    parentId?: string;
+    itemId?: string;
+    initialValue?: string;
+  }>({ type: "epic" });
+  
+  // Context menu states
+  const [contextMenu, setContextMenu] = useState<{
+    isOpen: boolean;
+    x: number;
+    y: number;
+    type: "epic" | "chapter" | "scene";
+    itemId: string;
+    itemTitle: string;
+  }>({
+    isOpen: false,
+    x: 0,
+    y: 0,
+    type: "epic",
+    itemId: "",
+    itemTitle: "",
+  });
+
+  // Inline editing states
+  const [editingItem, setEditingItem] = useState<{
+    type: "epic" | "chapter" | "scene";
+    itemId: string;
+    currentTitle: string;
+  } | null>(null);
 
   // Zustand store
   const {
@@ -22,6 +60,12 @@ export default function WritePage() {
     setEditorHtml,
     refreshStructure,
     saveVersion,
+    createNode,
+    updateNode,
+    deleteNode,
+    createScene,
+    updateScene,
+    deleteScene,
   } = useAppStore();
 
   // Mock branches for now
@@ -36,7 +80,7 @@ export default function WritePage() {
 
   // Initialize store on mount
   useEffect(() => {
-    if (structure.episodes.length === 0) {
+    if (structure.nodes.length === 0) {
       refreshStructure();
     }
     if (!branch && branches.length > 0) {
@@ -47,14 +91,19 @@ export default function WritePage() {
     setBranch,
     branch,
     branches,
-    structure.episodes.length,
+    structure.nodes.length,
   ]);
 
   const handleSave = useCallback(async () => {
-    if (editor.dirty) {
-      await saveVersion();
+    if (editor.dirty && !saving) {
+      setSaving(true);
+      try {
+        await saveVersion();
+      } finally {
+        setSaving(false);
+      }
     }
-  }, [editor.dirty, saveVersion]);
+  }, [editor.dirty, saving, saveVersion]);
 
   // Handle save with keyboard shortcut
   useEffect(() => {
@@ -143,6 +192,84 @@ export default function WritePage() {
     });
   };
 
+  // CRUD handlers
+  const handleCreate = (type: "epic" | "chapter" | "scene", parentId?: string) => {
+    setModalConfig({ type, parentId });
+    setShowCreateModal(true);
+  };
+
+  const handleEdit = (type: "epic" | "chapter" | "scene", itemId: string, title: string) => {
+    setModalConfig({ type, itemId, initialValue: title });
+    setShowEditModal(true);
+  };
+
+  const handleDelete = async (type: "epic" | "chapter" | "scene", itemId: string) => {
+    if (confirm(`Are you sure you want to delete this ${type}?`)) {
+      if (type === "scene") {
+        await deleteScene(itemId);
+      } else {
+        await deleteNode(itemId);
+      }
+    }
+  };
+
+  const handleContextMenu = (
+    e: React.MouseEvent,
+    type: "epic" | "chapter" | "scene",
+    itemId: string,
+    itemTitle: string
+  ) => {
+    e.preventDefault();
+    setContextMenu({
+      isOpen: true,
+      x: e.clientX,
+      y: e.clientY,
+      type,
+      itemId,
+      itemTitle,
+    });
+  };
+
+  const handleCreateSubmit = async (title: string) => {
+    const { type, parentId } = modalConfig;
+    if (type === "scene" && parentId) {
+      await createScene(parentId, title);
+    } else {
+      await createNode(type, title, parentId);
+    }
+  };
+
+  const handleEditSubmit = async (title: string) => {
+    const { type, itemId } = modalConfig;
+    if (type === "scene" && itemId) {
+      await updateScene(itemId, title);
+    } else if (itemId) {
+      await updateNode(itemId, title);
+    }
+  };
+
+  // Double-click editing handlers
+  const handleDoubleClick = (type: "epic" | "chapter" | "scene", itemId: string, currentTitle: string) => {
+    setEditingItem({ type, itemId, currentTitle });
+  };
+
+  const handleInlineEditSubmit = async (newTitle: string) => {
+    if (!editingItem) return;
+    
+    const { type, itemId } = editingItem;
+    if (type === "scene") {
+      await updateScene(itemId, newTitle);
+    } else {
+      await updateNode(itemId, newTitle);
+    }
+    setEditingItem(null);
+  };
+
+  const handleInlineEditCancel = () => {
+    setEditingItem(null);
+  };
+
+
   return (
     <div className="h-full flex flex-col">
       {/* Branch Bar */}
@@ -158,39 +285,132 @@ export default function WritePage() {
 
       {/* Main Content */}
       <div className="flex-1 grid grid-cols-12 gap-4 p-4">
-        {/* Episode/Scene sidebar */}
+        {/* Story Structure sidebar */}
         <aside className="col-span-3 border rounded p-3 overflow-auto">
-          <h3 className="font-semibold mb-2">Episodes & Scenes</h3>
+          <div className="flex justify-between items-center mb-2">
+            <h3 className="font-semibold">Story Structure</h3>
+            <button
+              onClick={() => handleCreate("epic")}
+              className="text-xs bg-green-600 text-white px-2 py-1 rounded hover:bg-green-700"
+              title="Add Epic"
+            >
+              + Epic
+            </button>
+          </div>
           <div className="mb-2">
             <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
               {branch?.name || "No branch"}
             </span>
           </div>
           <ul className="space-y-2">
-            {structure.episodes.map((ep) => (
-              <li key={ep.id}>
-                <div className="font-medium">{ep.title}</div>
-                <ul className="ml-3 list-disc">
-                  {structure.scenes
-                    .filter((sc) => sc.episode_id === ep.id)
-                    .map((sc) => (
-                      <li key={sc.id}>
-                        <button
-                          className={`text-left ${
-                            current.sceneId === sc.id ? "font-semibold" : ""
-                          }`}
-                          onClick={() => setCurrentScene(sc.id)}
-                        >
-                          {sc.title}
-                          {current.sceneId === sc.id && editor.dirty && (
-                            <span className="ml-1 text-orange-500">•</span>
-                          )}
-                        </button>
-                      </li>
-                    ))}
-                </ul>
-              </li>
-            ))}
+            {structure.nodes
+              .filter((node) => node.kind === "epic")
+              .map((epic) => (
+                <li key={epic.id}>
+                  <div 
+                    className="font-medium flex justify-between items-center group"
+                    onContextMenu={(e) => handleContextMenu(e, "epic", epic.id, epic.title)}
+                  >
+                    {editingItem?.type === "epic" && editingItem.itemId === epic.id ? (
+                      <InlineEdit
+                        value={editingItem.currentTitle}
+                        onSave={handleInlineEditSubmit}
+                        onCancel={handleInlineEditCancel}
+                        className="flex-1"
+                      />
+                    ) : (
+                      <span 
+                        onDoubleClick={() => handleDoubleClick("epic", epic.id, epic.title)}
+                        className="cursor-pointer hover:bg-gray-100 px-1 py-0.5 rounded"
+                        title="Double-click to edit"
+                      >
+                        {epic.title}
+                      </span>
+                    )}
+                    <button
+                      onClick={() => handleCreate("chapter", epic.id)}
+                      className="text-xs bg-blue-600 text-white px-1 py-0.5 rounded opacity-0 group-hover:opacity-100 hover:bg-blue-700"
+                      title="Add Chapter"
+                    >
+                      + Ch
+                    </button>
+                  </div>
+                  <ul className="ml-3 list-disc">
+                    {structure.nodes
+                      .filter((node) => node.parent_id === epic.id && node.kind === "chapter")
+                      .map((chapter) => (
+                        <li key={chapter.id}>
+                          <div 
+                            className="font-medium text-sm flex justify-between items-center group"
+                            onContextMenu={(e) => handleContextMenu(e, "chapter", chapter.id, chapter.title)}
+                          >
+                            {editingItem?.type === "chapter" && editingItem.itemId === chapter.id ? (
+                              <InlineEdit
+                                value={editingItem.currentTitle}
+                                onSave={handleInlineEditSubmit}
+                                onCancel={handleInlineEditCancel}
+                                className="flex-1 text-sm"
+                              />
+                            ) : (
+                              <span 
+                                onDoubleClick={() => handleDoubleClick("chapter", chapter.id, chapter.title)}
+                                className="cursor-pointer hover:bg-gray-100 px-1 py-0.5 rounded"
+                                title="Double-click to edit"
+                              >
+                                {chapter.title}
+                              </span>
+                            )}
+                            <button
+                              onClick={() => handleCreate("scene", chapter.id)}
+                              className="text-xs bg-purple-600 text-white px-1 py-0.5 rounded opacity-0 group-hover:opacity-100 hover:bg-purple-700"
+                              title="Add Scene"
+                            >
+                              + Sc
+                            </button>
+                          </div>
+                          <ul className="ml-3 list-disc">
+                            {structure.scenes
+                              .filter((sc) => sc.node_id === chapter.id)
+                              .map((sc) => (
+                                <li key={sc.id}>
+                                  {editingItem?.type === "scene" && editingItem.itemId === sc.id ? (
+                                    <InlineEdit
+                                      value={editingItem.currentTitle}
+                                      onSave={handleInlineEditSubmit}
+                                      onCancel={handleInlineEditCancel}
+                                      className="w-full text-sm"
+                                    />
+                                  ) : (
+                                    <button
+                                      className={`text-left w-full ${
+                                        current.sceneId === sc.id ? "font-semibold" : ""
+                                      }`}
+                                      onClick={() => setCurrentScene(sc.id)}
+                                      onContextMenu={(e) => handleContextMenu(e, "scene", sc.id, sc.title)}
+                                    >
+                                      <span 
+                                        onDoubleClick={(e) => {
+                                          e.stopPropagation();
+                                          handleDoubleClick("scene", sc.id, sc.title);
+                                        }}
+                                        className="cursor-pointer hover:bg-gray-100 px-1 py-0.5 rounded block"
+                                        title="Double-click to edit"
+                                      >
+                                        {sc.title}
+                                        {current.sceneId === sc.id && editor.dirty && (
+                                          <span className="ml-1 text-orange-500">•</span>
+                                        )}
+                                      </span>
+                                    </button>
+                                  )}
+                                </li>
+                              ))}
+                          </ul>
+                        </li>
+                      ))}
+                  </ul>
+                </li>
+              ))}
           </ul>
         </aside>
 
@@ -235,11 +455,11 @@ export default function WritePage() {
               {extracting ? "Extracting…" : "Extract Entities"}
             </button>
             <button
-              className="px-3 py-2 border rounded"
+              className="px-3 py-2 border rounded disabled:opacity-50"
               onClick={handleSave}
-              disabled={!editor.dirty}
+              disabled={!editor.dirty || saving}
             >
-              Save (⌘S)
+              {saving ? "Saving..." : "Save (⌘S)"}
             </button>
             <button className="px-3 py-2 border rounded">Open Composer</button>
           </div>
@@ -264,6 +484,46 @@ export default function WritePage() {
         onClose={() => setShowPRModal(false)}
         branches={branches}
         onPRCreated={handlePRCreated}
+      />
+
+      {/* Create Modal */}
+      <CreateEditModal
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onSubmit={handleCreateSubmit}
+        title={`Create ${modalConfig.type === "epic" ? "Epic" : modalConfig.type === "chapter" ? "Chapter" : "Scene"}`}
+        placeholder={`Enter ${modalConfig.type} title...`}
+        submitLabel="Create"
+      />
+
+      {/* Edit Modal */}
+      <CreateEditModal
+        isOpen={showEditModal}
+        onClose={() => setShowEditModal(false)}
+        onSubmit={handleEditSubmit}
+        title={`Edit ${modalConfig.type === "epic" ? "Epic" : modalConfig.type === "chapter" ? "Chapter" : "Scene"}`}
+        placeholder={`Enter ${modalConfig.type} title...`}
+        initialValue={modalConfig.initialValue}
+        submitLabel="Update"
+      />
+
+      {/* Context Menu */}
+      <ContextMenu
+        isOpen={contextMenu.isOpen}
+        onClose={() => setContextMenu({ ...contextMenu, isOpen: false })}
+        x={contextMenu.x}
+        y={contextMenu.y}
+        items={[
+          {
+            label: "Edit",
+            onClick: () => handleEdit(contextMenu.type, contextMenu.itemId, contextMenu.itemTitle),
+          },
+          {
+            label: "Delete",
+            onClick: () => handleDelete(contextMenu.type, contextMenu.itemId),
+            className: "text-red-600 hover:bg-red-50",
+          },
+        ]}
       />
     </div>
   );
