@@ -4,15 +4,18 @@ import GitStatusBar from './GitStatusBar';
 import GitEditor from './GitEditor';
 import PRModal from './PRModal';
 import { useFirebaseStore } from '../store/useFirebaseStore';
+import { useAuth } from '../contexts/AuthContext';
 
 export default function GitLayout() {
+  const { user } = useAuth();
   const { 
     structure, 
     branch, 
     setBranch, 
     refreshStructure, 
     setCurrentScene,
-    loadLatestVersion 
+    loadLatestVersion,
+    initializeUserRepo
   } = useFirebaseStore();
   const [currentSceneId, setCurrentSceneId] = useState<string>('');
   const [showPRModal, setShowPRModal] = useState(false);
@@ -25,9 +28,13 @@ export default function GitLayout() {
 
   // Initialize store on mount
   useEffect(() => {
-    console.log('🔄 GitLayout: Initializing store...');
-    refreshStructure();
-  }, [refreshStructure]);
+    if (user) {
+      console.log('🔄 GitLayout: Initializing store for user:', user.uid);
+      initializeUserRepo(user.uid).then(() => {
+        refreshStructure();
+      });
+    }
+  }, [user, initializeUserRepo, refreshStructure]);
 
   // Set default branch
   useEffect(() => {

@@ -61,6 +61,7 @@ interface FirebaseAppState {
   createScene: (chapterId: string, title: string) => Promise<void>;
   updateScene: (sceneId: string, title: string) => Promise<void>;
   deleteScene: (sceneId: string) => Promise<void>;
+  initializeUserRepo: (userId: string) => Promise<string>;
 
   // Entity CRUD operations
   getEntities: () => Promise<void>;
@@ -456,6 +457,37 @@ export const useFirebaseStore = create<FirebaseAppState>((set, get) => ({
       get().refreshStructure();
     } catch (error) {
       console.error("❌ Failed to create node:", error);
+    }
+  },
+
+  // Initialize user's repository
+  initializeUserRepo: async (userId: string) => {
+    try {
+      console.log('🔄 Initializing user repository for:', userId);
+      
+      // Check if user already has a repository
+      const existingRepos = await firebaseService.getRepositoriesByUser(userId);
+      
+      if (existingRepos.length > 0) {
+        const repo = existingRepos[0];
+        console.log('✅ Found existing repository:', repo);
+        set({ repoId: repo.id });
+        return repo.id || '';
+      }
+      
+      // Create a new repository for the user
+      const newRepo = await firebaseService.createRepository({
+        name: 'My Story',
+        user_id: userId,
+        is_public: false,
+      });
+      
+      console.log('✅ Created new repository:', newRepo);
+      set({ repoId: newRepo.id });
+      return newRepo.id || '';
+    } catch (error) {
+      console.error('❌ Failed to initialize user repository:', error);
+      throw error;
     }
   },
 

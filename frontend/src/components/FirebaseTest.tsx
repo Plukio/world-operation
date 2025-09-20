@@ -51,7 +51,9 @@ export default function FirebaseTest() {
 
       // Create
       const newRepo = await firebaseService.createRepository({
-        name: 'Test Repository'
+        name: 'Test Repository',
+        user_id: 'test-user',
+        is_public: false
       });
       addResult(`✅ Created repository: ${newRepo.id}`);
 

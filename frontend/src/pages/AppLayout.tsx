@@ -1,6 +1,16 @@
 import { NavLink, Outlet } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
 
 export default function AppLayout() {
+  const { user, logout } = useAuth();
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
+  };
   return (
     <div className="min-h-screen flex flex-col bg-gray-900">
       {/* Modern Git-like Header */}
@@ -16,6 +26,29 @@ export default function AppLayout() {
             <div className="text-sm text-gray-400">
               Git for Fiction
             </div>
+          </div>
+          
+          <div className="flex items-center space-x-4">
+            {/* User Info */}
+            <div className="flex items-center space-x-2 text-sm text-gray-300">
+              <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
+                <span className="text-white font-medium">
+                  {user?.displayName?.charAt(0) || user?.email?.charAt(0) || 'U'}
+                </span>
+              </div>
+              <span>{user?.displayName || user?.email}</span>
+            </div>
+
+            {/* Logout Button */}
+            <button
+              onClick={handleLogout}
+              className="text-gray-400 hover:text-white px-3 py-1 rounded-md hover:bg-gray-700 transition-colors"
+              title="Sign out"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              </svg>
+            </button>
           </div>
           
           <nav className="flex items-center space-x-1">
