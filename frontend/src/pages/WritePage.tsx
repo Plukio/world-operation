@@ -1,5 +1,5 @@
-import StoryLayout from "../components/StoryLayout";
+import ModernWritePage from "../components/ModernWritePage";
 
 export default function WritePage() {
-  return <StoryLayout />;
+  return <ModernWritePage />;
 }
