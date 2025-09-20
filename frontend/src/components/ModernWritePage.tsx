@@ -22,6 +22,7 @@ interface ModernWritePageProps {
 export default function ModernWritePage({ className = '' }: ModernWritePageProps) {
   const [selectedSceneId, setSelectedSceneId] = useState<string | null>(null);
   const [sceneContent, setSceneContent] = useState<string>('');
+  const [sceneMetadata, setSceneMetadata] = useState<{ pov?: string; tense?: string; style?: string }>({});
   const [isSaving, setIsSaving] = useState(false);
   const [isLoadingContent, setIsLoadingContent] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
@@ -30,10 +31,10 @@ export default function ModernWritePage({ className = '' }: ModernWritePageProps
   const [showRightPane, setShowRightPane] = useState(true);
   const [activeTab, setActiveTab] = useState<'entities' | 'muse'>('entities');
   
-  // POV/Tense/Style state
-  const [pov, setPov] = useState('Third Person');
-  const [tense, setTense] = useState('Past');
-  const [style, setStyle] = useState('Narrative');
+  // POV/Tense/Style state - these will be synced with sceneMetadata
+  const pov = sceneMetadata.pov || 'Third Person';
+  const tense = sceneMetadata.tense || 'Past';
+  const style = sceneMetadata.style || 'Narrative';
 
   useEffect(() => {
     // Load preferences from localStorage
@@ -78,12 +79,15 @@ export default function ModernWritePage({ className = '' }: ModernWritePageProps
     setHasUnsavedChanges(false);
     
     try {
-      const content = await sceneContentService.loadSceneContent(sceneId);
+      const { content, metadata } = await sceneContentService.loadSceneContent(sceneId);
       setSceneContent(content);
+      setSceneMetadata(metadata || {});
       console.log('Scene content loaded:', content.substring(0, 100) + '...');
+      console.log('Scene metadata loaded:', metadata);
     } catch (error) {
       console.error('Error loading scene content:', error);
       setSceneContent('');
+      setSceneMetadata({});
     } finally {
       setIsLoadingContent(false);
     }
@@ -107,12 +111,17 @@ export default function ModernWritePage({ className = '' }: ModernWritePageProps
     // No auto-save - user will save manually or when leaving editor
   };
 
+  const handleMetadataChange = (key: 'pov' | 'tense' | 'style', value: string) => {
+    setSceneMetadata(prev => ({ ...prev, [key]: value }));
+    setHasUnsavedChanges(true);
+  };
+
   const handleSave = async () => {
     if (!selectedSceneId) return;
     
     setIsSaving(true);
     try {
-      await sceneContentService.saveSceneContent(selectedSceneId, sceneContent);
+      await sceneContentService.saveSceneContent(selectedSceneId, sceneContent, sceneMetadata);
       setHasUnsavedChanges(false);
     } catch (error) {
       console.error('Save error:', error);
@@ -189,7 +198,7 @@ export default function ModernWritePage({ className = '' }: ModernWritePageProps
             <div className="flex items-center space-x-2">
               <select
                 value={pov}
-                onChange={(e) => setPov(e.target.value)}
+                onChange={(e) => handleMetadataChange('pov', e.target.value)}
                 className="text-xs px-2 py-1 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 rounded border-none focus:outline-none"
               >
                 <option value="First Person">1st</option>
@@ -198,7 +207,7 @@ export default function ModernWritePage({ className = '' }: ModernWritePageProps
               </select>
               <select
                 value={tense}
-                onChange={(e) => setTense(e.target.value)}
+                onChange={(e) => handleMetadataChange('tense', e.target.value)}
                 className="text-xs px-2 py-1 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 rounded border-none focus:outline-none"
               >
                 <option value="Present">Present</option>
@@ -207,7 +216,7 @@ export default function ModernWritePage({ className = '' }: ModernWritePageProps
               </select>
               <select
                 value={style}
-                onChange={(e) => setStyle(e.target.value)}
+                onChange={(e) => handleMetadataChange('style', e.target.value)}
                 className="text-xs px-2 py-1 bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300 rounded border-none focus:outline-none"
               >
                 <option value="Narrative">Narrative</option>

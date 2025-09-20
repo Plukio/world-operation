@@ -272,6 +272,10 @@ export default function ModernStoryStructure({ onSceneSelect, onClearSelection, 
                     <div 
                       className="flex items-center space-x-2 p-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg cursor-pointer"
                       onClick={onClearSelection}
+                      onContextMenu={(e) => {
+                        e.preventDefault();
+                        handleContextMenu(e, epic);
+                      }}
                     >
                       <button
                         onClick={(e) => {
@@ -323,6 +327,10 @@ export default function ModernStoryStructure({ onSceneSelect, onClearSelection, 
                                 <div 
                                   className="flex items-center space-x-2 p-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg cursor-pointer"
                                   onClick={onClearSelection}
+                                  onContextMenu={(e) => {
+                                    e.preventDefault();
+                                    handleContextMenu(e, episode);
+                                  }}
                                 >
                                   <button
                                     onClick={(e) => {
@@ -376,7 +384,10 @@ export default function ModernStoryStructure({ onSceneSelect, onClearSelection, 
                                               : 'hover:bg-gray-50 dark:hover:bg-gray-700'
                                           }`}
                                           onClick={() => onSceneSelect(scene.id)}
-                                          onContextMenu={(e) => handleContextMenu(e, scene)}
+                                          onContextMenu={(e) => {
+                                            e.preventDefault();
+                                            handleContextMenu(e, scene);
+                                          }}
                                         >
                                           {getStatusIcon(getSceneStatus(scene.id))}
                                           <span className="flex-1 text-sm text-gray-600 dark:text-gray-400">

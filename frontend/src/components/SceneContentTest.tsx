@@ -15,7 +15,7 @@ export default function SceneContentTest({ sceneId, sceneTitle }: SceneContentTe
   const handleLoadContent = async () => {
     setIsLoading(true);
     try {
-      const content = await sceneContentService.loadSceneContent(sceneId);
+      const { content } = await sceneContentService.loadSceneContent(sceneId);
       setLoadedContent(content);
       console.log(`Loaded content for scene ${sceneId}:`, content);
     } catch (error) {

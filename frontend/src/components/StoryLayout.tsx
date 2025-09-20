@@ -17,7 +17,7 @@ export default function StoryLayout() {
     // Load scene content
     setIsLoading(true);
     try {
-      const content = await sceneContentService.loadSceneContent(sceneId);
+      const { content } = await sceneContentService.loadSceneContent(sceneId);
       setSceneContent(content);
       console.log('Scene content loaded:', content.substring(0, 100) + '...');
     } catch (error) {
