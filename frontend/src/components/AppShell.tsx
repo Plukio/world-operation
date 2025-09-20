@@ -1,15 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { 
-  Save, 
   GitBranch, 
   Sun, 
   Moon, 
   Command, 
-  Search,
   User
 } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
+import CommandPalette from './CommandPalette';
 
 interface AppShellProps {
   children: React.ReactNode;
@@ -24,7 +23,6 @@ interface BreadcrumbItem {
 export default function AppShell({ children }: AppShellProps) {
   const { theme, toggleTheme } = useTheme();
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
-  const [saveStatus, setSaveStatus] = useState<'saved' | 'unsaved' | 'syncing' | 'error'>('saved');
   const [currentBranch, setCurrentBranch] = useState('main');
   const [breadcrumbs, setBreadcrumbs] = useState<BreadcrumbItem[]>([]);
   
@@ -46,33 +44,38 @@ export default function AppShell({ children }: AppShellProps) {
     setBreadcrumbs(newBreadcrumbs);
   }, [location.pathname]);
 
-  const handleSave = () => {
-    setSaveStatus('syncing');
-    // TODO: Implement actual save logic
-    setTimeout(() => {
-      setSaveStatus('saved');
-    }, 1000);
-  };
+  // Global keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Command palette toggle
+      if ((e.metaKey || e.ctrlKey) && e.key === '/') {
+        e.preventDefault();
+        setIsCommandPaletteOpen(prev => !prev);
+      }
+      
+      // Navigation shortcuts
+      if ((e.metaKey || e.ctrlKey) && !e.shiftKey) {
+        switch (e.key) {
+          case 'w':
+            e.preventDefault();
+            navigate('/');
+            break;
+          case 'e':
+            e.preventDefault();
+            navigate('/entities');
+            break;
+          case 'c':
+            e.preventDefault();
+            navigate('/commits');
+            break;
+        }
+      }
+    };
 
-  const getStatusColor = () => {
-    switch (saveStatus) {
-      case 'saved': return 'text-green-600 bg-green-50 border-green-200';
-      case 'unsaved': return 'text-orange-600 bg-orange-50 border-orange-200';
-      case 'syncing': return 'text-blue-600 bg-blue-50 border-blue-200';
-      case 'error': return 'text-red-600 bg-red-50 border-red-200';
-      default: return 'text-gray-600 bg-gray-50 border-gray-200';
-    }
-  };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [navigate]);
 
-  const getStatusText = () => {
-    switch (saveStatus) {
-      case 'saved': return 'Saved';
-      case 'unsaved': return 'Unsaved';
-      case 'syncing': return 'Syncing...';
-      case 'error': return 'Error';
-      default: return 'Unknown';
-    }
-  };
 
   return (
     <div className="h-screen bg-gray-50 dark:bg-gray-900 flex flex-col">
@@ -125,21 +128,6 @@ export default function AppShell({ children }: AppShellProps) {
 
             {/* Right: Actions */}
             <div className="flex items-center space-x-3">
-              {/* Save Status */}
-              <div className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor()}`}>
-                {getStatusText()}
-              </div>
-
-              {/* Save Button */}
-              <button
-                onClick={handleSave}
-                disabled={saveStatus === 'syncing'}
-                className="btn-primary flex items-center space-x-2"
-              >
-                <Save className="w-4 h-4" />
-                <span>Save</span>
-              </button>
-
               {/* Command Palette */}
               <button
                 onClick={() => setIsCommandPaletteOpen(true)}
@@ -172,69 +160,23 @@ export default function AppShell({ children }: AppShellProps) {
         {children}
       </main>
 
-      {/* Command Palette Modal */}
-      {isCommandPaletteOpen && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center pt-20">
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-4 border border-gray-200 dark:border-gray-700 w-full max-w-2xl mx-4">
-            <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-              <div className="flex items-center space-x-3">
-                <Search className="w-5 h-5 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Type a command or search..."
-                  className="flex-1 bg-transparent border-none outline-none text-lg placeholder-gray-400"
-                  autoFocus
-                />
-                <button
-                  onClick={() => setIsCommandPaletteOpen(false)}
-                  className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
-                >
-                  ESC
-                </button>
-              </div>
-            </div>
-            <div className="p-2">
-              <div className="space-y-1">
-                <div className="px-3 py-2 text-xs font-medium text-gray-500 uppercase tracking-wide">Navigation</div>
-                <button className="w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
-                  <div className="font-medium">Go to Write</div>
-                  <div className="text-sm text-gray-500">⌘W</div>
-                </button>
-                <button className="w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
-                  <div className="font-medium">Go to Entities</div>
-                  <div className="text-sm text-gray-500">⌘E</div>
-                </button>
-                <button className="w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
-                  <div className="font-medium">Go to Commits</div>
-                  <div className="text-sm text-gray-500">⌘C</div>
-                </button>
-                
-                <div className="px-3 py-2 text-xs font-medium text-gray-500 uppercase tracking-wide mt-4">Create</div>
-                <button className="w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
-                  <div className="font-medium">New Epic</div>
-                  <div className="text-sm text-gray-500">⌘⇧E</div>
-                </button>
-                <button className="w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
-                  <div className="font-medium">New Chapter</div>
-                  <div className="text-sm text-gray-500">⌘⇧K</div>
-                </button>
-                <button className="w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
-                  <div className="font-medium">New Scene</div>
-                  <div className="text-sm text-gray-500">⌘⇧N</div>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Backdrop */}
-      {isCommandPaletteOpen && (
-        <div 
-          className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40"
-          onClick={() => setIsCommandPaletteOpen(false)}
-        />
-      )}
+      {/* Command Palette */}
+      <CommandPalette
+        isOpen={isCommandPaletteOpen}
+        onClose={() => setIsCommandPaletteOpen(false)}
+        onCreateEpic={() => {
+          // TODO: Implement create epic functionality
+          console.log('Create epic from command palette');
+        }}
+        onCreateEpisode={() => {
+          // TODO: Implement create episode functionality
+          console.log('Create episode from command palette');
+        }}
+        onCreateScene={() => {
+          // TODO: Implement create scene functionality
+          console.log('Create scene from command palette');
+        }}
+      />
     </div>
   );
 }
