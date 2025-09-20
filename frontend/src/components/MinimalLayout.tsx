@@ -4,6 +4,7 @@ import { useFirebaseStore } from '../store/useFirebaseStore';
 import MinimalSidebar from './MinimalSidebar';
 import MinimalEditor from './MinimalEditor';
 import MinimalToolbar from './MinimalToolbar';
+import DebugPanel from './DebugPanel';
 
 export default function MinimalLayout() {
   const { user } = useAuth();
@@ -70,6 +71,9 @@ export default function MinimalLayout() {
           />
         </div>
       </div>
+      
+      {/* Debug Panel */}
+      <DebugPanel />
     </div>
   );
 }

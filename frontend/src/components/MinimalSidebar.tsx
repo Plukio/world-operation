@@ -22,9 +22,13 @@ export default function MinimalSidebar({
   } | null>(null);
 
   const handleCreate = async (type: 'epic' | 'chapter' | 'scene', parentId?: string) => {
+    console.log('🎯 handleCreate called:', { type, parentId });
     const title = prompt(`Enter ${type} name:`);
+    console.log('📝 User entered title:', title);
+    
     if (title) {
       try {
+        console.log('🚀 Attempting to create:', { type, title, parentId });
         if (type === 'epic') {
           await createNode('epic', title);
         } else if (type === 'chapter' && parentId) {
@@ -32,9 +36,13 @@ export default function MinimalSidebar({
         } else if (type === 'scene' && parentId) {
           await createScene(parentId, title);
         }
+        console.log('✅ Creation completed successfully');
       } catch (error) {
-        console.error('Failed to create:', error);
+        console.error('❌ Failed to create:', error);
+        alert(`Failed to create ${type}: ${error}`);
       }
+    } else {
+      console.log('❌ No title provided, cancelling creation');
     }
   };
 
