@@ -6,11 +6,12 @@ import {
   MoreHorizontal, 
   Edit3, 
   Trash2, 
-  BookOpen, 
-  FileText, 
   Circle,
   CheckCircle,
-  AlertCircle
+  AlertCircle,
+  Crown,
+  BookMarked,
+  ScrollText
 } from 'lucide-react';
 import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, query, orderBy } from 'firebase/firestore';
 import { db } from '../lib/firebase';
@@ -167,6 +168,7 @@ export default function ModernStoryStructure({ onSceneSelect, onClearSelection, 
 
   const handleUpdateItem = async (id: string, type: 'node' | 'scene', newTitle: string) => {
     try {
+      console.log('🔄 Updating item:', { id, type, newTitle });
       if (type === 'node') {
         await updateDoc(doc(db, 'storyNodes', id), { 
           title: newTitle, 
@@ -175,6 +177,7 @@ export default function ModernStoryStructure({ onSceneSelect, onClearSelection, 
         setNodes(prev => prev.map(node => 
           node.id === id ? { ...node, title: newTitle, updated_at: new Date() } : node
         ));
+        console.log('✅ Node updated successfully');
       } else {
         await updateDoc(doc(db, 'scenes', id), { 
           title: newTitle, 
@@ -183,6 +186,7 @@ export default function ModernStoryStructure({ onSceneSelect, onClearSelection, 
         setScenes(prev => prev.map(scene => 
           scene.id === id ? { ...scene, title: newTitle, updated_at: new Date() } : scene
         ));
+        console.log('✅ Scene updated successfully');
       }
       
       // Notify parent component to refresh breadcrumbs
@@ -190,12 +194,13 @@ export default function ModernStoryStructure({ onSceneSelect, onClearSelection, 
         onStructureChange();
       }
     } catch (error) {
-      console.error('Error updating item:', error);
+      console.error('❌ Error updating item:', error);
     }
   };
 
   const handleDeleteItem = async (id: string, type: 'node' | 'scene') => {
     try {
+      console.log('🗑️ Deleting item:', { id, type });
       if (type === 'node') {
         await deleteDoc(doc(db, 'storyNodes', id));
         setNodes(prev => prev.filter(node => node.id !== id));
@@ -205,9 +210,11 @@ export default function ModernStoryStructure({ onSceneSelect, onClearSelection, 
           await deleteDoc(doc(db, 'scenes', scene.id));
         }
         setScenes(prev => prev.filter(scene => scene.node_id !== id));
+        console.log('✅ Node and associated scenes deleted successfully');
       } else {
         await deleteDoc(doc(db, 'scenes', id));
         setScenes(prev => prev.filter(scene => scene.id !== id));
+        console.log('✅ Scene deleted successfully');
       }
       
       // Notify parent component to refresh breadcrumbs
@@ -215,7 +222,7 @@ export default function ModernStoryStructure({ onSceneSelect, onClearSelection, 
         onStructureChange();
       }
     } catch (error) {
-      console.error('Error deleting item:', error);
+      console.error('❌ Error deleting item:', error);
     }
   };
 
@@ -239,6 +246,7 @@ export default function ModernStoryStructure({ onSceneSelect, onClearSelection, 
   const handleFloatingActions = (e: React.MouseEvent, item: StoryNode | Scene) => {
     e.stopPropagation();
     const rect = e.currentTarget.getBoundingClientRect();
+    console.log('🎯 Floating actions triggered for:', item.title, item.id);
     setFloatingActions({ 
       id: item.id, 
       type: 'title' in item ? 'node' : 'scene', 
@@ -307,7 +315,7 @@ export default function ModernStoryStructure({ onSceneSelect, onClearSelection, 
       <div className="flex-1 overflow-y-auto p-2">
         {nodes.filter(node => node.kind === 'epic').length === 0 ? (
           <div className="text-center py-8">
-            <BookOpen className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
+            <Crown className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
             <p className="text-gray-500 dark:text-gray-400 text-sm mb-4">No epics yet</p>
             <button
               onClick={handleCreateEpic}
@@ -346,7 +354,7 @@ export default function ModernStoryStructure({ onSceneSelect, onClearSelection, 
                           <ChevronRight className="w-3 h-3" />
                         )}
                       </button>
-                      <BookOpen className="w-4 h-4 text-blue-500" />
+                      <Crown className="w-4 h-4 text-yellow-500" />
                       <span className="flex-1 text-sm font-medium text-gray-900 dark:text-white">
                         {epic.title}
                       </span>
@@ -398,7 +406,7 @@ export default function ModernStoryStructure({ onSceneSelect, onClearSelection, 
                                       <ChevronRight className="w-3 h-3" />
                                     )}
                                   </button>
-                                  <FileText className="w-4 h-4 text-green-500" />
+                                  <BookMarked className="w-4 h-4 text-blue-500" />
                                   <span className="flex-1 text-sm text-gray-700 dark:text-gray-300">
                                     {episode.title}
                                   </span>
@@ -439,6 +447,7 @@ export default function ModernStoryStructure({ onSceneSelect, onClearSelection, 
                                             handleContextMenu(e, scene);
                                           }}
                                         >
+                                          <ScrollText className="w-3 h-3 text-purple-500" />
                                           {getStatusIcon(getSceneStatus(scene.id))}
                                           <span className="flex-1 text-sm text-gray-600 dark:text-gray-400">
                                             {scene.title}
@@ -508,10 +517,12 @@ export default function ModernStoryStructure({ onSceneSelect, onClearSelection, 
         >
           <button
             onClick={() => {
+              console.log('✏️ Rename button clicked for:', floatingActions);
               const item = floatingActions.type === 'node' 
                 ? nodes.find(n => n.id === floatingActions.id)
                 : scenes.find(s => s.id === floatingActions.id);
               if (item) {
+                console.log('📝 Setting editing item:', item);
                 setEditingItem({
                   id: item.id,
                   type: floatingActions.type,
@@ -527,6 +538,7 @@ export default function ModernStoryStructure({ onSceneSelect, onClearSelection, 
           </button>
           <button
             onClick={() => {
+              console.log('🗑️ Delete button clicked for:', floatingActions);
               handleDeleteItem(floatingActions.id, floatingActions.type);
               closeFloatingActions();
             }}
