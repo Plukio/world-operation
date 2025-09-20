@@ -510,21 +510,20 @@ export const useFirebaseStore = create<FirebaseAppState>((set, get) => ({
     try {
       console.log('🔄 Initializing user repository for:', userId);
       
-      // Check if user already has a repository
+      // First, try to find or create the "default-repo" repository
       const existingRepos = await firebaseService.getRepositoriesByUser(userId);
       
-      if (existingRepos.length > 0) {
-        const repo = existingRepos[0];
+      // Look for a repository with name "My Story" or use the first one
+      let repo = existingRepos.find(r => r.name === 'My Story') || existingRepos[0];
+      
+      if (repo && repo.id) {
         console.log('✅ Found existing repository:', repo);
-        if (repo.id) {
-          set({ repoId: repo.id });
-          return repo.id;
-        } else {
-          throw new Error('Repository found but has no ID');
-        }
+        set({ repoId: repo.id });
+        return repo.id;
       }
       
-      // Create a new repository for the user
+      // If no repository found, create one with the default name
+      console.log('📝 Creating new repository for user...');
       const newRepo = await firebaseService.createRepository({
         name: 'My Story',
         user_id: userId,
@@ -540,7 +539,10 @@ export const useFirebaseStore = create<FirebaseAppState>((set, get) => ({
       }
     } catch (error) {
       console.error('❌ Failed to initialize user repository:', error);
-      throw error;
+      // Fallback to default-repo if initialization fails
+      console.log('🔄 Falling back to default-repo');
+      set({ repoId: "default-repo" });
+      return "default-repo";
     }
   },
 

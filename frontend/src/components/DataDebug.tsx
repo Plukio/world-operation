@@ -30,6 +30,19 @@ export default function DataDebug() {
     }
   };
 
+  const handleTestCreateEpic = async () => {
+    const { createNode } = useFirebaseStore.getState();
+    console.log('🧪 Testing epic creation...');
+    
+    try {
+      await createNode('epic', 'Test Epic ' + new Date().toLocaleTimeString());
+      console.log('✅ Test epic created successfully');
+    } catch (error) {
+      console.error('❌ Test epic creation failed:', error);
+      alert(`Test epic creation failed: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  };
+
   return (
     <div className="fixed bottom-4 right-4 bg-white border border-gray-300 rounded-lg p-4 shadow-lg max-w-sm z-50">
       <h3 className="font-semibold text-gray-900 mb-3">Data Debug</h3>
@@ -53,6 +66,13 @@ export default function DataDebug() {
           className="w-full px-3 py-1 text-xs bg-blue-100 hover:bg-blue-200 text-blue-700 rounded"
         >
           Refresh All Data
+        </button>
+        
+        <button
+          onClick={handleTestCreateEpic}
+          className="w-full px-3 py-1 text-xs bg-green-100 hover:bg-green-200 text-green-700 rounded"
+        >
+          Test Create Epic
         </button>
         
         <details className="text-xs">
