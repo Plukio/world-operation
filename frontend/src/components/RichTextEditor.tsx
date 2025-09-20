@@ -11,7 +11,6 @@ import ListItem from "@tiptap/extension-list-item";
 import Blockquote from "@tiptap/extension-blockquote";
 import Code from "@tiptap/extension-code";
 import Highlight from "@tiptap/extension-highlight";
-import History from "@tiptap/extension-history";
 import { useEffect } from "react";
 
 interface Props {
@@ -34,7 +33,6 @@ export default function RichTextEditor({ value, onChange }: Props) {
       Blockquote,
       Code,
       Highlight,
-      History,
     ],
     content: value,
     onUpdate({ editor }) {
