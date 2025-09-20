@@ -444,19 +444,19 @@ export const useFirebaseStore = create<FirebaseAppState>((set, get) => ({
   // CRUD operations
   createNode: async (kind: string, title: string, parentId?: string) => {
     const { repoId } = get();
-    console.log('🔄 Creating node:', { kind, title, parentId, repoId });
     try {
-      const newNode = await firebaseService.createStoryNode({
+      await firebaseService.createStoryNode({
         repo_id: repoId,
         kind,
         title,
         parent_id: parentId,
         order_idx: 0,
       });
-      console.log('✅ Node created successfully:', newNode);
-      get().refreshStructure();
+      // Wait for structure refresh to complete
+      await get().refreshStructure();
     } catch (error) {
       console.error("❌ Failed to create node:", error);
+      throw error; // Re-throw so UI can handle the error
     }
   },
 
@@ -494,18 +494,20 @@ export const useFirebaseStore = create<FirebaseAppState>((set, get) => ({
   updateNode: async (nodeId: string, title: string) => {
     try {
       await firebaseService.updateStoryNode(nodeId, { title });
-      get().refreshStructure();
+      await get().refreshStructure();
     } catch (error) {
       console.error("Failed to update node:", error);
+      throw error;
     }
   },
 
   deleteNode: async (nodeId: string) => {
     try {
       await firebaseService.deleteStoryNode(nodeId);
-      get().refreshStructure();
+      await get().refreshStructure();
     } catch (error) {
       console.error("Failed to delete node:", error);
+      throw error;
     }
   },
 
@@ -516,27 +518,31 @@ export const useFirebaseStore = create<FirebaseAppState>((set, get) => ({
         title,
         order_idx: 0,
       });
-      get().refreshStructure();
+      // Wait for structure refresh to complete
+      await get().refreshStructure();
     } catch (error) {
       console.error("Failed to create scene:", error);
+      throw error; // Re-throw so UI can handle the error
     }
   },
 
   updateScene: async (sceneId: string, title: string) => {
     try {
       await firebaseService.updateScene(sceneId, { title });
-      get().refreshStructure();
+      await get().refreshStructure();
     } catch (error) {
       console.error("Failed to update scene:", error);
+      throw error;
     }
   },
 
   deleteScene: async (sceneId: string) => {
     try {
       await firebaseService.deleteScene(sceneId);
-      get().refreshStructure();
+      await get().refreshStructure();
     } catch (error) {
       console.error("Failed to delete scene:", error);
+      throw error;
     }
   },
 

@@ -22,27 +22,22 @@ export default function MinimalSidebar({
   } | null>(null);
 
   const handleCreate = async (type: 'epic' | 'chapter' | 'scene', parentId?: string) => {
-    console.log('🎯 handleCreate called:', { type, parentId });
     const title = prompt(`Enter ${type} name:`);
-    console.log('📝 User entered title:', title);
     
-    if (title) {
+    if (title && title.trim()) {
       try {
-        console.log('🚀 Attempting to create:', { type, title, parentId });
         if (type === 'epic') {
-          await createNode('epic', title);
+          await createNode('epic', title.trim());
         } else if (type === 'chapter' && parentId) {
-          await createNode('chapter', title, parentId);
+          await createNode('chapter', title.trim(), parentId);
         } else if (type === 'scene' && parentId) {
-          await createScene(parentId, title);
+          await createScene(parentId, title.trim());
         }
-        console.log('✅ Creation completed successfully');
+        // The createNode/createScene functions should automatically refresh the structure
       } catch (error) {
-        console.error('❌ Failed to create:', error);
-        alert(`Failed to create ${type}: ${error}`);
+        console.error('Failed to create:', error);
+        alert(`Failed to create ${type}. Please try again.`);
       }
-    } else {
-      console.log('❌ No title provided, cancelling creation');
     }
   };
 
@@ -51,17 +46,18 @@ export default function MinimalSidebar({
   };
 
   const handleInlineEditSubmit = async (newTitle: string) => {
-    if (!editingItem) return;
+    if (!editingItem || !newTitle.trim()) return;
     
     const { type, itemId } = editingItem;
     try {
       if (type === 'scene' && itemId) {
-        await updateScene(itemId, newTitle);
+        await updateScene(itemId, newTitle.trim());
       } else if (itemId) {
-        await updateNode(itemId, newTitle);
+        await updateNode(itemId, newTitle.trim());
       }
     } catch (error) {
       console.error('Failed to update:', error);
+      alert(`Failed to update ${type}. Please try again.`);
     }
     setEditingItem(null);
   };
@@ -80,6 +76,7 @@ export default function MinimalSidebar({
         }
       } catch (error) {
         console.error('Failed to delete:', error);
+        alert(`Failed to delete ${type}. Please try again.`);
       }
     }
   };
