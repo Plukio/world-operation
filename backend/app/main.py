@@ -3,7 +3,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from .api import entities, extract, scenes
+from .api import branches, commits, diff, entities, extract, muse, scenes, versions
 
 app = FastAPI(
     title="World Operation API",
@@ -24,6 +24,11 @@ app.add_middleware(
 app.include_router(extract.router, prefix="/api", tags=["extract"])
 app.include_router(scenes.router, prefix="/api", tags=["scenes"])
 app.include_router(entities.router, prefix="/api", tags=["entities"])
+app.include_router(branches.router, prefix="/api", tags=["branches"])
+app.include_router(commits.router, prefix="/api", tags=["commits"])
+app.include_router(versions.router, prefix="/api", tags=["versions"])
+app.include_router(diff.router, prefix="/api", tags=["diff"])
+app.include_router(muse.router, prefix="/api", tags=["muse"])
 
 
 @app.get("/")
