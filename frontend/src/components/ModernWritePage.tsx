@@ -16,6 +16,7 @@ import ResizablePane from './ResizablePane';
 import { sceneContentService } from '../lib/sceneContentService';
 import { collection, getDocs, query, orderBy } from 'firebase/firestore';
 import { db } from '../lib/firebase';
+import { openaiService, type ExtractedEntity } from '../lib/openaiService';
 
 interface StoryNode {
   id: string;
@@ -53,6 +54,8 @@ export default function ModernWritePage({ className = '' }: ModernWritePageProps
   const [showRightPane, setShowRightPane] = useState(true);
   const [showLeftPane, setShowLeftPane] = useState(true);
   const [isExtractingEntities, setIsExtractingEntities] = useState(false);
+  const [extractedEntities, setExtractedEntities] = useState<ExtractedEntity[]>([]);
+  const [extractionSummary, setExtractionSummary] = useState<string>('');
   
   // Story structure data for breadcrumbs
   const [nodes, setNodes] = useState<StoryNode[]>([]);
@@ -172,17 +175,23 @@ export default function ModernWritePage({ className = '' }: ModernWritePageProps
 
     setIsExtractingEntities(true);
     try {
-      // TODO: Implement OpenAI API call to extract entities
-      console.log('Extracting entities from scene:', selectedSceneId, sceneContent);
+      console.log('🤖 Extracting entities from scene:', selectedSceneId);
       
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Use OpenAI API to extract entities
+      const result = await openaiService.extractEntitiesWithFallback(sceneContent);
       
-      // For now, just show a success message
-      alert('Entities extracted successfully! (This is a placeholder - implement OpenAI integration)');
+      console.log('✅ Entities extracted:', result);
+      
+      // Update state with extracted entities
+      setExtractedEntities(result.entities);
+      setExtractionSummary(result.summary);
+      
+      // Show success message
+      alert(`Successfully extracted ${result.entities.length} entities from the scene!`);
+      
     } catch (error) {
-      console.error('Error extracting entities:', error);
-      alert('Failed to extract entities. Please try again.');
+      console.error('❌ Error extracting entities:', error);
+      alert(`Failed to extract entities: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setIsExtractingEntities(false);
     }
@@ -441,45 +450,75 @@ export default function ModernWritePage({ className = '' }: ModernWritePageProps
 
             {/* Content */}
             <div className="flex-1 overflow-y-auto p-4">
-              <div className="space-y-4">
-                <div>
-                  <h4 className="font-medium text-gray-900 dark:text-white mb-3">Characters</h4>
-                  <div className="space-y-2">
-                    <div className="flex items-center space-x-2 p-2 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                      <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs font-medium">
-                        J
-                      </div>
-                      <span className="text-sm text-gray-700 dark:text-gray-300">John Doe</span>
+              {extractedEntities.length > 0 ? (
+                <div className="space-y-4">
+                  {/* Summary */}
+                  {extractionSummary && (
+                    <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                      <h4 className="font-medium text-blue-900 dark:text-blue-100 mb-2">Scene Summary</h4>
+                      <p className="text-sm text-blue-700 dark:text-blue-300">{extractionSummary}</p>
                     </div>
-                    <div className="flex items-center space-x-2 p-2 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                      <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center text-white text-xs font-medium">
-                        S
-                      </div>
-                      <span className="text-sm text-gray-700 dark:text-gray-300">Sarah Smith</span>
-                    </div>
-                  </div>
-                </div>
+                  )}
 
-                <div>
-                  <h4 className="font-medium text-gray-900 dark:text-white mb-3">Places</h4>
-                  <div className="space-y-2">
-                    <div className="flex items-center space-x-2 p-2 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                      <MapPin className="w-4 h-4 text-red-500" />
-                      <span className="text-sm text-gray-700 dark:text-gray-300">Central Park</span>
-                    </div>
-                  </div>
-                </div>
+                  {/* Group entities by type */}
+                  {['character', 'place', 'event', 'object', 'relationship'].map(type => {
+                    const entitiesOfType = extractedEntities.filter(entity => entity.type === type);
+                    if (entitiesOfType.length === 0) return null;
 
-                <div>
-                  <h4 className="font-medium text-gray-900 dark:text-white mb-3">Events</h4>
-                  <div className="space-y-2">
-                    <div className="flex items-center space-x-2 p-2 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                      <Calendar className="w-4 h-4 text-orange-500" />
-                      <span className="text-sm text-gray-700 dark:text-gray-300">The Meeting</span>
-                    </div>
+                    const getIcon = (entityType: string) => {
+                      switch (entityType) {
+                        case 'character': return <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs font-medium">{entityType[0].toUpperCase()}</div>;
+                        case 'place': return <MapPin className="w-4 h-4 text-red-500" />;
+                        case 'event': return <Calendar className="w-4 h-4 text-orange-500" />;
+                        case 'object': return <div className="w-6 h-6 bg-purple-500 rounded-full flex items-center justify-center text-white text-xs font-medium">O</div>;
+                        case 'relationship': return <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center text-white text-xs font-medium">R</div>;
+                        default: return <div className="w-6 h-6 bg-gray-500 rounded-full flex items-center justify-center text-white text-xs font-medium">?</div>;
+                      }
+                    };
+
+                    return (
+                      <div key={type}>
+                        <h4 className="font-medium text-gray-900 dark:text-white mb-3 capitalize">
+                          {type}s ({entitiesOfType.length})
+                        </h4>
+                        <div className="space-y-2">
+                          {entitiesOfType.map((entity, index) => (
+                            <div key={index} className="flex items-start space-x-2 p-2 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                              {getIcon(entity.type)}
+                              <div className="flex-1 min-w-0">
+                                <div className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                                  {entity.name}
+                                </div>
+                                <div className="text-xs text-gray-500 dark:text-gray-400">
+                                  {entity.description}
+                                </div>
+                                {entity.confidence && (
+                                  <div className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                                    Confidence: {Math.round(entity.confidence * 100)}%
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    <Sparkles className="w-8 h-8 text-white" />
+                  </div>
+                  <h4 className="font-medium text-gray-900 dark:text-white mb-2">No Entities Extracted</h4>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                    Select a scene with content and click "Extract" to analyze it with AI.
+                  </p>
+                  <div className="text-xs text-gray-500 dark:text-gray-400">
+                    AI will identify characters, places, events, objects, and relationships.
                   </div>
                 </div>
-              </div>
+              )}
             </div>
           </div>
         </ResizablePane>
