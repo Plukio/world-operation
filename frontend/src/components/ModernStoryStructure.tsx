@@ -37,10 +37,11 @@ interface Scene {
 
 interface ModernStoryStructureProps {
   onSceneSelect: (sceneId: string) => void;
+  onClearSelection: () => void;
   selectedSceneId?: string;
 }
 
-export default function ModernStoryStructure({ onSceneSelect, selectedSceneId }: ModernStoryStructureProps) {
+export default function ModernStoryStructure({ onSceneSelect, onClearSelection, selectedSceneId }: ModernStoryStructureProps) {
   const [nodes, setNodes] = useState<StoryNode[]>([]);
   const [scenes, setScenes] = useState<Scene[]>([]);
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
@@ -268,9 +269,15 @@ export default function ModernStoryStructure({ onSceneSelect, selectedSceneId }:
                 <div key={epic.id} className="space-y-1">
                   {/* Epic */}
                   <div className="group">
-                    <div className="flex items-center space-x-2 p-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg">
+                    <div 
+                      className="flex items-center space-x-2 p-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg cursor-pointer"
+                      onClick={onClearSelection}
+                    >
                       <button
-                        onClick={() => toggleExpanded(epic.id)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleExpanded(epic.id);
+                        }}
                         className="p-1 hover:bg-gray-200 dark:hover:bg-gray-600 rounded"
                       >
                         {expandedNodes.has(epic.id) ? (
@@ -284,14 +291,20 @@ export default function ModernStoryStructure({ onSceneSelect, selectedSceneId }:
                         {epic.title}
                       </span>
                       <button
-                        onClick={() => handleCreateEpisode(epic.id)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleCreateEpisode(epic.id);
+                        }}
                         className="opacity-0 group-hover:opacity-100 p-1 hover:bg-gray-200 dark:hover:bg-gray-600 rounded text-gray-500 hover:text-gray-700 dark:hover:text-gray-200 transition-opacity"
                         title="New Episode"
                       >
                         <Plus className="w-3 h-3" />
                       </button>
                       <button
-                        onContextMenu={(e) => handleContextMenu(e, epic)}
+                        onContextMenu={(e) => {
+                          e.stopPropagation();
+                          handleContextMenu(e, epic);
+                        }}
                         className="opacity-0 group-hover:opacity-100 p-1 hover:bg-gray-200 dark:hover:bg-gray-600 rounded text-gray-500 hover:text-gray-700 dark:hover:text-gray-200 transition-opacity"
                       >
                         <MoreHorizontal className="w-3 h-3" />
@@ -307,9 +320,15 @@ export default function ModernStoryStructure({ onSceneSelect, selectedSceneId }:
                             <div key={episode.id} className="space-y-1">
                               {/* Episode */}
                               <div className="group">
-                                <div className="flex items-center space-x-2 p-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg">
+                                <div 
+                                  className="flex items-center space-x-2 p-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg cursor-pointer"
+                                  onClick={onClearSelection}
+                                >
                                   <button
-                                    onClick={() => toggleExpanded(episode.id)}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      toggleExpanded(episode.id);
+                                    }}
                                     className="p-1 hover:bg-gray-200 dark:hover:bg-gray-600 rounded"
                                   >
                                     {expandedNodes.has(episode.id) ? (
@@ -323,14 +342,20 @@ export default function ModernStoryStructure({ onSceneSelect, selectedSceneId }:
                                     {episode.title}
                                   </span>
                                   <button
-                                    onClick={() => handleCreateScene(episode.id)}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleCreateScene(episode.id);
+                                    }}
                                     className="opacity-0 group-hover:opacity-100 p-1 hover:bg-gray-200 dark:hover:bg-gray-600 rounded text-gray-500 hover:text-gray-700 dark:hover:text-gray-200 transition-opacity"
                                     title="New Scene"
                                   >
                                     <Plus className="w-3 h-3" />
                                   </button>
                                   <button
-                                    onContextMenu={(e) => handleContextMenu(e, episode)}
+                                    onContextMenu={(e) => {
+                                      e.stopPropagation();
+                                      handleContextMenu(e, episode);
+                                    }}
                                     className="opacity-0 group-hover:opacity-100 p-1 hover:bg-gray-200 dark:hover:bg-gray-600 rounded text-gray-500 hover:text-gray-700 dark:hover:text-gray-200 transition-opacity"
                                   >
                                     <MoreHorizontal className="w-3 h-3" />

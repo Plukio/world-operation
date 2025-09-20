@@ -24,6 +24,7 @@ export default function ModernWritePage({ className = '' }: ModernWritePageProps
   const [sceneContent, setSceneContent] = useState<string>('');
   const [isSaving, setIsSaving] = useState(false);
   const [isLoadingContent, setIsLoadingContent] = useState(false);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [isTypewriterMode, setIsTypewriterMode] = useState(false);
   const [isFocusMode, setIsFocusMode] = useState(false);
   const [showRightPane, setShowRightPane] = useState(true);
@@ -45,10 +46,36 @@ export default function ModernWritePage({ className = '' }: ModernWritePageProps
     setShowRightPane(savedRightPane);
   }, []);
 
+  // Save when leaving the page
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (hasUnsavedChanges && selectedSceneId) {
+        e.preventDefault();
+        e.returnValue = 'You have unsaved changes. Are you sure you want to leave?';
+        // Try to save before leaving
+        handleSave();
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [hasUnsavedChanges, selectedSceneId]);
+
+  // Debug: Log when selectedSceneId changes
+  useEffect(() => {
+    console.log('🔍 selectedSceneId changed to:', selectedSceneId);
+  }, [selectedSceneId]);
+
   const handleSceneSelect = async (sceneId: string) => {
-    console.log('Scene selected:', sceneId);
+    // Save current scene before switching
+    if (selectedSceneId && hasUnsavedChanges) {
+      await handleSave();
+    }
+    
+    console.log('🎬 Scene selected:', sceneId);
     setSelectedSceneId(sceneId);
     setIsLoadingContent(true);
+    setHasUnsavedChanges(false);
     
     try {
       const content = await sceneContentService.loadSceneContent(sceneId);
@@ -62,21 +89,22 @@ export default function ModernWritePage({ className = '' }: ModernWritePageProps
     }
   };
 
+  const handleClearSelection = () => {
+    // Save current scene before clearing
+    if (selectedSceneId && hasUnsavedChanges) {
+      handleSave();
+    }
+    
+    console.log('🧹 Clearing scene selection');
+    setSelectedSceneId(null);
+    setSceneContent('');
+    setHasUnsavedChanges(false);
+  };
+
   const handleEditorChange = (html: string) => {
     setSceneContent(html);
-    
-    // Only auto-save if we have a selected scene and the content has actually changed
-    if (selectedSceneId && html.trim().length > 0) {
-      setIsSaving(true);
-      sceneContentService.autoSaveSceneContent(selectedSceneId, html)
-        .then(() => {
-          setIsSaving(false);
-        })
-        .catch((error) => {
-          console.error('Auto-save error:', error);
-          setIsSaving(false);
-        });
-    }
+    setHasUnsavedChanges(true);
+    // No auto-save - user will save manually or when leaving editor
   };
 
   const handleSave = async () => {
@@ -85,6 +113,7 @@ export default function ModernWritePage({ className = '' }: ModernWritePageProps
     setIsSaving(true);
     try {
       await sceneContentService.saveSceneContent(selectedSceneId, sceneContent);
+      setHasUnsavedChanges(false);
     } catch (error) {
       console.error('Save error:', error);
     } finally {
@@ -123,6 +152,7 @@ export default function ModernWritePage({ className = '' }: ModernWritePageProps
         <ResizablePane side="left" initialWidth={320} minWidth={250} maxWidth={500}>
           <ModernStoryStructure
             onSceneSelect={handleSceneSelect}
+            onClearSelection={handleClearSelection}
             selectedSceneId={selectedSceneId || undefined}
           />
         </ResizablePane>
@@ -216,11 +246,17 @@ export default function ModernWritePage({ className = '' }: ModernWritePageProps
             {/* Save Button */}
             <button
               onClick={handleSave}
-              disabled={isSaving || !selectedSceneId}
-              className="btn-primary flex items-center space-x-2"
+              disabled={isSaving || !selectedSceneId || !hasUnsavedChanges}
+              className={`flex items-center space-x-2 ${
+                hasUnsavedChanges 
+                  ? 'btn-primary' 
+                  : 'bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed px-4 py-2 rounded-lg'
+              }`}
             >
               <Save className="w-4 h-4" />
-              <span>{isSaving ? 'Saving...' : 'Save'}</span>
+              <span>
+                {isSaving ? 'Saving...' : hasUnsavedChanges ? 'Save' : 'Saved'}
+              </span>
             </button>
           </div>
         </div>
