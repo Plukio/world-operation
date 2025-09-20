@@ -8,7 +8,11 @@ import {
   Save,
   PanelLeft,
   PanelRight,
-  Sparkles
+  Sparkles,
+  Edit3,
+  Trash2,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import ModernStoryStructure from './ModernStoryStructure';
 import ModernEditor from './ModernEditor';
@@ -16,7 +20,8 @@ import ResizablePane from './ResizablePane';
 import { sceneContentService } from '../lib/sceneContentService';
 import { collection, getDocs, query, orderBy } from 'firebase/firestore';
 import { db } from '../lib/firebase';
-import { openaiService, type ExtractedEntity } from '../lib/openaiService';
+import { openaiService } from '../lib/openaiService';
+import { firebaseService, type SceneEntity, type SceneExtraction } from '../lib/firebaseService';
 
 interface StoryNode {
   id: string;
@@ -54,8 +59,10 @@ export default function ModernWritePage({ className = '' }: ModernWritePageProps
   const [showRightPane, setShowRightPane] = useState(true);
   const [showLeftPane, setShowLeftPane] = useState(true);
   const [isExtractingEntities, setIsExtractingEntities] = useState(false);
-  const [extractedEntities, setExtractedEntities] = useState<ExtractedEntity[]>([]);
-  const [extractionSummary, setExtractionSummary] = useState<string>('');
+  const [sceneEntities, setSceneEntities] = useState<SceneEntity[]>([]);
+  const [sceneExtraction, setSceneExtraction] = useState<SceneExtraction | null>(null);
+  const [editingEntity, setEditingEntity] = useState<SceneEntity | null>(null);
+  const [newEntity, setNewEntity] = useState<Partial<SceneEntity>>({});
   
   // Story structure data for breadcrumbs
   const [nodes, setNodes] = useState<StoryNode[]>([]);
@@ -135,12 +142,28 @@ export default function ModernWritePage({ className = '' }: ModernWritePageProps
       setSceneMetadata(metadata || {});
       console.log('Scene content loaded:', content.substring(0, 100) + '...');
       console.log('Scene metadata loaded:', metadata);
+      
+      // Load scene entities and extraction
+      await loadSceneEntities(sceneId);
     } catch (error) {
       console.error('Error loading scene content:', error);
       setSceneContent('');
       setSceneMetadata({});
     } finally {
       setIsLoadingContent(false);
+    }
+  };
+
+  const loadSceneEntities = async (sceneId: string) => {
+    try {
+      const entities = await firebaseService.getSceneEntities(sceneId);
+      const extraction = await firebaseService.getSceneExtraction(sceneId);
+      setSceneEntities(entities);
+      setSceneExtraction(extraction);
+    } catch (error) {
+      console.error('Error loading scene entities:', error);
+      setSceneEntities([]);
+      setSceneExtraction(null);
     }
   };
 
@@ -182,18 +205,99 @@ export default function ModernWritePage({ className = '' }: ModernWritePageProps
       
       console.log('✅ Entities extracted:', result);
       
-      // Update state with extracted entities
-      setExtractedEntities(result.entities);
-      setExtractionSummary(result.summary);
+      // Save entities to database
+      const sceneEntities: SceneEntity[] = result.entities.map(entity => ({
+        scene_id: selectedSceneId,
+        entity_name: entity.name,
+        entity_type: entity.type,
+        description: entity.description,
+        confidence: entity.confidence || 0.8,
+        actions: entity.actions || [],
+        extracted_at: new Date()
+      }));
+
+      // Save each entity
+      for (const entity of sceneEntities) {
+        await firebaseService.createSceneEntity(entity);
+      }
+
+      // Save extraction summary
+      await firebaseService.createSceneExtraction({
+        scene_id: selectedSceneId,
+        summary: result.summary,
+        entities: sceneEntities,
+        extracted_at: new Date()
+      });
+
+      // Reload entities to show updated data
+      await loadSceneEntities(selectedSceneId);
       
       // Show success message
-      alert(`Successfully extracted ${result.entities.length} entities from the scene!`);
+      alert(`Successfully extracted and saved ${result.entities.length} entities from the scene!`);
       
     } catch (error) {
       console.error('❌ Error extracting entities:', error);
       alert(`Failed to extract entities: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setIsExtractingEntities(false);
+    }
+  };
+
+  const handleEditEntity = (entity: SceneEntity) => {
+    setEditingEntity(entity);
+  };
+
+  const handleDeleteEntity = async (entityId: string) => {
+    if (confirm('Are you sure you want to delete this entity?')) {
+      try {
+        await firebaseService.deleteSceneEntity(entityId);
+        if (selectedSceneId) {
+          await loadSceneEntities(selectedSceneId);
+        }
+      } catch (error) {
+        console.error('Error deleting entity:', error);
+        alert('Failed to delete entity');
+      }
+    }
+  };
+
+  const handleSaveEntity = async () => {
+    if (!editingEntity || !selectedSceneId) return;
+    
+    try {
+      await firebaseService.updateSceneEntity(editingEntity.id!, {
+        entity_name: editingEntity.entity_name,
+        entity_type: editingEntity.entity_type,
+        description: editingEntity.description,
+        confidence: editingEntity.confidence,
+        actions: editingEntity.actions
+      });
+      setEditingEntity(null);
+      await loadSceneEntities(selectedSceneId);
+    } catch (error) {
+      console.error('Error saving entity:', error);
+      alert('Failed to save entity');
+    }
+  };
+
+  const handleAddEntity = async () => {
+    if (!selectedSceneId || !newEntity.entity_name) return;
+    
+    try {
+      await firebaseService.createSceneEntity({
+        scene_id: selectedSceneId,
+        entity_name: newEntity.entity_name,
+        entity_type: newEntity.entity_type || 'other',
+        description: newEntity.description || '',
+        confidence: newEntity.confidence || 0.8,
+        actions: newEntity.actions || [],
+        extracted_at: new Date()
+      });
+      setNewEntity({});
+      await loadSceneEntities(selectedSceneId);
+    } catch (error) {
+      console.error('Error adding entity:', error);
+      alert('Failed to add entity');
     }
   };
 
@@ -424,6 +528,27 @@ export default function ModernWritePage({ className = '' }: ModernWritePageProps
         </div>
       </div>
 
+      {/* Floating Toggle Buttons */}
+      {!showLeftPane && (
+        <button
+          onClick={() => setShowLeftPane(true)}
+          className="fixed left-4 top-1/2 transform -translate-y-1/2 z-40 p-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+          title="Show Story Structure"
+        >
+          <ChevronRight className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+        </button>
+      )}
+
+      {!showRightPane && (
+        <button
+          onClick={() => setShowRightPane(true)}
+          className="fixed right-4 top-1/2 transform -translate-y-1/2 z-40 p-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+          title="Show Entities Panel"
+        >
+          <ChevronLeft className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+        </button>
+      )}
+
       {/* Right Pane - Inspector */}
       {showRightPane && !isFocusMode && (
         <ResizablePane side="right" initialWidth={300} minWidth={250} maxWidth={400}>
@@ -450,24 +575,64 @@ export default function ModernWritePage({ className = '' }: ModernWritePageProps
 
             {/* Content */}
             <div className="flex-1 overflow-y-auto p-4">
-              {extractedEntities.length > 0 ? (
+              {sceneEntities.length > 0 || sceneExtraction ? (
                 <div className="space-y-4">
                   {/* Summary */}
-                  {extractionSummary && (
+                  {sceneExtraction?.summary && (
                     <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
                       <h4 className="font-medium text-blue-900 dark:text-blue-100 mb-2">Scene Summary</h4>
-                      <p className="text-sm text-blue-700 dark:text-blue-300">{extractionSummary}</p>
+                      <p className="text-sm text-blue-700 dark:text-blue-300">{sceneExtraction.summary}</p>
                     </div>
                   )}
 
+                  {/* Add New Entity */}
+                  <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
+                    <h4 className="font-medium text-gray-900 dark:text-white mb-3">Add Entity</h4>
+                    <div className="space-y-2">
+                      <input
+                        type="text"
+                        placeholder="Entity name"
+                        value={newEntity.entity_name || ''}
+                        onChange={(e) => setNewEntity(prev => ({ ...prev, entity_name: e.target.value }))}
+                        className="w-full p-2 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                      />
+                      <select
+                        value={newEntity.entity_type || 'other'}
+                        onChange={(e) => setNewEntity(prev => ({ ...prev, entity_type: e.target.value as any }))}
+                        className="w-full p-2 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                      >
+                        <option value="character">Character</option>
+                        <option value="place">Place</option>
+                        <option value="event">Event</option>
+                        <option value="object">Object</option>
+                        <option value="relationship">Relationship</option>
+                        <option value="other">Other</option>
+                      </select>
+                      <textarea
+                        placeholder="Description"
+                        value={newEntity.description || ''}
+                        onChange={(e) => setNewEntity(prev => ({ ...prev, description: e.target.value }))}
+                        className="w-full p-2 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                        rows={2}
+                      />
+                      <button
+                        onClick={handleAddEntity}
+                        disabled={!newEntity.entity_name}
+                        className="w-full px-3 py-2 bg-blue-500 text-white rounded text-sm hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed"
+                      >
+                        Add Entity
+                      </button>
+                    </div>
+                  </div>
+
                   {/* Group entities by type */}
                   {['character', 'place', 'event', 'object', 'relationship'].map(type => {
-                    const entitiesOfType = extractedEntities.filter(entity => entity.type === type);
+                    const entitiesOfType = sceneEntities.filter(entity => entity.entity_type === type);
                     if (entitiesOfType.length === 0) return null;
 
                     const getIcon = (entityType: string) => {
                       switch (entityType) {
-                        case 'character': return <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs font-medium">{entityType[0].toUpperCase()}</div>;
+                        case 'character': return <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs font-medium">C</div>;
                         case 'place': return <MapPin className="w-4 h-4 text-red-500" />;
                         case 'event': return <Calendar className="w-4 h-4 text-orange-500" />;
                         case 'object': return <div className="w-6 h-6 bg-purple-500 rounded-full flex items-center justify-center text-white text-xs font-medium">O</div>;
@@ -482,21 +647,40 @@ export default function ModernWritePage({ className = '' }: ModernWritePageProps
                           {type}s ({entitiesOfType.length})
                         </h4>
                         <div className="space-y-2">
-                          {entitiesOfType.map((entity, index) => (
-                            <div key={index} className="flex items-start space-x-2 p-2 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                              {getIcon(entity.type)}
+                          {entitiesOfType.map((entity) => (
+                            <div key={entity.id} className="flex items-start space-x-2 p-2 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                              {getIcon(entity.entity_type)}
                               <div className="flex-1 min-w-0">
                                 <div className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                                  {entity.name}
+                                  {entity.entity_name}
                                 </div>
                                 <div className="text-xs text-gray-500 dark:text-gray-400">
                                   {entity.description}
                                 </div>
-                                {entity.confidence && (
-                                  <div className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                                    Confidence: {Math.round(entity.confidence * 100)}%
+                                {entity.actions && entity.actions.length > 0 && (
+                                  <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                    Actions: {entity.actions.join(', ')}
                                   </div>
                                 )}
+                                <div className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                                  Confidence: {Math.round(entity.confidence * 100)}%
+                                </div>
+                              </div>
+                              <div className="flex space-x-1">
+                                <button
+                                  onClick={() => handleEditEntity(entity)}
+                                  className="p-1 text-gray-400 hover:text-blue-500"
+                                  title="Edit entity"
+                                >
+                                  <Edit3 className="w-3 h-3" />
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteEntity(entity.id!)}
+                                  className="p-1 text-gray-400 hover:text-red-500"
+                                  title="Delete entity"
+                                >
+                                  <Trash2 className="w-3 h-3" />
+                                </button>
                               </div>
                             </div>
                           ))}
@@ -522,6 +706,99 @@ export default function ModernWritePage({ className = '' }: ModernWritePageProps
             </div>
           </div>
         </ResizablePane>
+      )}
+
+      {/* Edit Entity Modal */}
+      {editingEntity && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-96">
+            <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Edit Entity</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Name
+                </label>
+                <input
+                  type="text"
+                  value={editingEntity.entity_name}
+                  onChange={(e) => setEditingEntity(prev => prev ? { ...prev, entity_name: e.target.value } : null)}
+                  className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Type
+                </label>
+                <select
+                  value={editingEntity.entity_type}
+                  onChange={(e) => setEditingEntity(prev => prev ? { ...prev, entity_type: e.target.value as any } : null)}
+                  className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                >
+                  <option value="character">Character</option>
+                  <option value="place">Place</option>
+                  <option value="event">Event</option>
+                  <option value="object">Object</option>
+                  <option value="relationship">Relationship</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Description
+                </label>
+                <textarea
+                  value={editingEntity.description}
+                  onChange={(e) => setEditingEntity(prev => prev ? { ...prev, description: e.target.value } : null)}
+                  className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  rows={3}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Actions (comma-separated)
+                </label>
+                <input
+                  type="text"
+                  value={editingEntity.actions?.join(', ') || ''}
+                  onChange={(e) => setEditingEntity(prev => prev ? { ...prev, actions: e.target.value.split(',').map(a => a.trim()).filter(a => a) } : null)}
+                  className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  placeholder="walks, speaks, fights"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Confidence
+                </label>
+                <input
+                  type="range"
+                  min="0"
+                  max="1"
+                  step="0.1"
+                  value={editingEntity.confidence}
+                  onChange={(e) => setEditingEntity(prev => prev ? { ...prev, confidence: parseFloat(e.target.value) } : null)}
+                  className="w-full"
+                />
+                <div className="text-sm text-gray-500 dark:text-gray-400">
+                  {Math.round(editingEntity.confidence * 100)}%
+                </div>
+              </div>
+            </div>
+            <div className="flex justify-end space-x-2 mt-6">
+              <button
+                onClick={() => setEditingEntity(null)}
+                className="px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveEntity}
+                className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+              >
+                Save
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
