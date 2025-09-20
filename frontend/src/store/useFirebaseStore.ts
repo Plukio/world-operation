@@ -198,6 +198,11 @@ export const useFirebaseStore = create<FirebaseAppState>((set, get) => ({
     const { repoId } = get();
     console.log('🔄 Refreshing structure from Firebase:', { repoId });
     
+    if (!repoId) {
+      console.error('❌ No repoId available for refreshStructure');
+      return;
+    }
+    
     set((state) => ({ loading: { ...state.loading, structure: true } }));
     
     try {
@@ -210,7 +215,8 @@ export const useFirebaseStore = create<FirebaseAppState>((set, get) => ({
 
       console.log('📊 Raw data from Firebase:', { 
         nodes: nodes, 
-        allScenes: allScenes 
+        allScenes: allScenes,
+        repoId: repoId
       });
 
       // Filter scenes that belong to the nodes in this repo
@@ -220,7 +226,11 @@ export const useFirebaseStore = create<FirebaseAppState>((set, get) => ({
       console.log('✅ Loaded structure from Firebase:', { 
         nodesCount: nodes.length, 
         scenesCount: scenes.length,
-        nodeIds: nodeIds
+        nodeIds: nodeIds,
+        finalStructure: {
+          nodes: nodes,
+          scenes: scenes
+        }
       });
 
       set({
@@ -229,8 +239,14 @@ export const useFirebaseStore = create<FirebaseAppState>((set, get) => ({
           scenes: scenes || [],
         },
       });
+      
+      console.log('✅ Structure state updated in store');
     } catch (error) {
       console.error("❌ Failed to fetch structure from Firebase:", error);
+      console.error("❌ Error details:", {
+        message: error instanceof Error ? error.message : String(error),
+        code: (error as any)?.code || 'unknown'
+      });
       // Fallback to empty structure
       set({
         structure: {
