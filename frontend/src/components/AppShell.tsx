@@ -9,6 +9,7 @@ import {
   Search,
   User
 } from 'lucide-react';
+import { useTheme } from '../contexts/ThemeContext';
 
 interface AppShellProps {
   children: React.ReactNode;
@@ -21,7 +22,7 @@ interface BreadcrumbItem {
 }
 
 export default function AppShell({ children }: AppShellProps) {
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  const { theme, toggleTheme } = useTheme();
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
   const [saveStatus, setSaveStatus] = useState<'saved' | 'unsaved' | 'syncing' | 'error'>('saved');
   const [currentBranch, setCurrentBranch] = useState('main');
@@ -31,15 +32,6 @@ export default function AppShell({ children }: AppShellProps) {
   const navigate = useNavigate();
 
   // Initialize dark mode from localStorage
-  useEffect(() => {
-    const savedTheme = localStorage.getItem('theme');
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    const shouldBeDark = savedTheme === 'dark' || (!savedTheme && prefersDark);
-    
-    setIsDarkMode(shouldBeDark);
-    document.documentElement.setAttribute('data-theme', shouldBeDark ? 'dark' : 'light');
-  }, []);
-
   // Update breadcrumbs based on current route
   useEffect(() => {
     const pathSegments = location.pathname.split('/').filter(Boolean);
@@ -53,13 +45,6 @@ export default function AppShell({ children }: AppShellProps) {
 
     setBreadcrumbs(newBreadcrumbs);
   }, [location.pathname]);
-
-  const toggleDarkMode = () => {
-    const newTheme = !isDarkMode;
-    setIsDarkMode(newTheme);
-    document.documentElement.setAttribute('data-theme', newTheme ? 'dark' : 'light');
-    localStorage.setItem('theme', newTheme ? 'dark' : 'light');
-  };
 
   const handleSave = () => {
     setSaveStatus('syncing');
@@ -166,11 +151,11 @@ export default function AppShell({ children }: AppShellProps) {
 
               {/* Dark Mode Toggle */}
               <button
-                onClick={toggleDarkMode}
+                onClick={toggleTheme}
                 className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
                 title="Toggle Dark Mode"
               >
-                {isDarkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+                {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
               </button>
 
               {/* User Menu */}

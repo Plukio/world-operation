@@ -82,7 +82,7 @@ export default function ModernEditor({
     },
     editorProps: {
       attributes: {
-        class: `prose prose-lg max-w-none focus:outline-none text-gray-900 dark:text-gray-100 ${
+        class: `prose prose-lg max-w-none focus:outline-none ${
           isTypewriterMode ? 'typewriter-mode' : ''
         }`,
         'data-placeholder': editorPlaceholder,
@@ -349,11 +349,11 @@ export default function ModernEditor({
       </div>
 
       {/* Editor Content */}
-      <div className="flex-1 overflow-y-auto bg-white dark:bg-gray-900">
+      <div className="flex-1 overflow-y-auto bg-white dark:bg-gray-900 transition-colors duration-200">
         <div className="max-w-4xl mx-auto p-6">
           <EditorContent
             editor={editor}
-            className="min-h-full prose prose-lg max-w-none text-gray-900 dark:text-gray-100"
+            className="min-h-full"
             style={{
               minHeight: 'calc(100vh - 200px)',
             }}

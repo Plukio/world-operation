@@ -288,7 +288,7 @@ export default function ModernStoryStructure({ onSceneSelect, onClearSelection, 
   }
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-full flex flex-col bg-white dark:bg-gray-800 transition-colors duration-200">
       {/* Header */}
       <div className="p-4 border-b border-gray-200 dark:border-gray-700">
         <div className="flex items-center justify-between">

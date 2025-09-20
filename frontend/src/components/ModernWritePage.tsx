@@ -223,7 +223,7 @@ export default function ModernWritePage({ className = '' }: ModernWritePageProps
       {/* Main Editor Area */}
       <div className="flex-1 flex flex-col">
         {/* Header Row */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+        <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 transition-colors duration-200">
           {/* Breadcrumbs */}
           <div className="flex items-center space-x-2 text-sm">
             {getBreadcrumbs().map((crumb, index) => (

@@ -2,6 +2,7 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
+import { ThemeProvider } from "./contexts/ThemeContext";
 import AuthWrapper from "./components/AuthWrapper";
 import AppLayout from "./pages/AppLayout";
 import WritePage from "./pages/WritePage";
@@ -14,11 +15,13 @@ const router = createBrowserRouter([
   {
     path: "/",
     element: (
-      <AuthProvider>
-        <AuthWrapper>
-          <AppLayout />
-        </AuthWrapper>
-      </AuthProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <AuthWrapper>
+            <AppLayout />
+          </AuthWrapper>
+        </AuthProvider>
+      </ThemeProvider>
     ),
     children: [
       { index: true, element: <WritePage /> },
