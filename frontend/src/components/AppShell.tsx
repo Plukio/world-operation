@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { 
-  GitBranch, 
   Sun, 
   Moon, 
   Command, 
@@ -23,7 +22,6 @@ interface BreadcrumbItem {
 export default function AppShell({ children }: AppShellProps) {
   const { theme, toggleTheme } = useTheme();
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
-  const [currentBranch, setCurrentBranch] = useState('main');
   const [breadcrumbs, setBreadcrumbs] = useState<BreadcrumbItem[]>([]);
   
   const location = useLocation();
@@ -112,19 +110,6 @@ export default function AppShell({ children }: AppShellProps) {
               </nav>
             </div>
 
-            {/* Center: Branch Selector */}
-            <div className="flex items-center space-x-2">
-              <GitBranch className="w-4 h-4 text-gray-500" />
-              <select
-                value={currentBranch}
-                onChange={(e) => setCurrentBranch(e.target.value)}
-                className="bg-transparent border-none text-sm font-medium text-gray-700 dark:text-gray-300 focus:outline-none"
-              >
-                <option value="main">main</option>
-                <option value="draft">draft</option>
-                <option value="feature">feature</option>
-              </select>
-            </div>
 
             {/* Right: Actions */}
             <div className="flex items-center space-x-3">
