@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import StoryStructure from './StoryStructure';
+import WorkingStoryStructure from './WorkingStoryStructure';
 import RichTextEditor from './RichTextEditor';
 import { useFirebaseStore } from '../store/useFirebaseStore';
 
@@ -21,7 +21,7 @@ export default function StoryLayout() {
   return (
     <div className="h-screen flex bg-white">
       {/* Story Structure Sidebar */}
-      <StoryStructure onSceneSelect={handleSceneSelect} />
+      <WorkingStoryStructure onSceneSelect={handleSceneSelect} />
       
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col">
