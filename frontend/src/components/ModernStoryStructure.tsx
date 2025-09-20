@@ -39,9 +39,10 @@ interface ModernStoryStructureProps {
   onSceneSelect: (sceneId: string) => void;
   onClearSelection: () => void;
   selectedSceneId?: string;
+  onStructureChange?: () => void;
 }
 
-export default function ModernStoryStructure({ onSceneSelect, onClearSelection, selectedSceneId }: ModernStoryStructureProps) {
+export default function ModernStoryStructure({ onSceneSelect, onClearSelection, selectedSceneId, onStructureChange }: ModernStoryStructureProps) {
   const [nodes, setNodes] = useState<StoryNode[]>([]);
   const [scenes, setScenes] = useState<Scene[]>([]);
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
@@ -107,6 +108,11 @@ export default function ModernStoryStructure({ onSceneSelect, onClearSelection, 
       const docRef = await addDoc(collection(db, 'storyNodes'), newEpic);
       setNodes(prev => [...prev, { id: docRef.id, ...newEpic }]);
       setExpandedNodes(prev => new Set([...prev, docRef.id]));
+      
+      // Notify parent component to refresh breadcrumbs
+      if (onStructureChange) {
+        onStructureChange();
+      }
     } catch (error) {
       console.error('Error creating epic:', error);
     }
@@ -127,6 +133,11 @@ export default function ModernStoryStructure({ onSceneSelect, onClearSelection, 
       const docRef = await addDoc(collection(db, 'storyNodes'), newEpisode);
       setNodes(prev => [...prev, { id: docRef.id, ...newEpisode }]);
       setExpandedNodes(prev => new Set([...prev, docRef.id]));
+      
+      // Notify parent component to refresh breadcrumbs
+      if (onStructureChange) {
+        onStructureChange();
+      }
     } catch (error) {
       console.error('Error creating episode:', error);
     }
@@ -144,6 +155,11 @@ export default function ModernStoryStructure({ onSceneSelect, onClearSelection, 
       
       const docRef = await addDoc(collection(db, 'scenes'), newScene);
       setScenes(prev => [...prev, { id: docRef.id, ...newScene }]);
+      
+      // Notify parent component to refresh breadcrumbs
+      if (onStructureChange) {
+        onStructureChange();
+      }
     } catch (error) {
       console.error('Error creating scene:', error);
     }
@@ -168,6 +184,11 @@ export default function ModernStoryStructure({ onSceneSelect, onClearSelection, 
           scene.id === id ? { ...scene, title: newTitle, updated_at: new Date() } : scene
         ));
       }
+      
+      // Notify parent component to refresh breadcrumbs
+      if (onStructureChange) {
+        onStructureChange();
+      }
     } catch (error) {
       console.error('Error updating item:', error);
     }
@@ -187,6 +208,11 @@ export default function ModernStoryStructure({ onSceneSelect, onClearSelection, 
       } else {
         await deleteDoc(doc(db, 'scenes', id));
         setScenes(prev => prev.filter(scene => scene.id !== id));
+      }
+      
+      // Notify parent component to refresh breadcrumbs
+      if (onStructureChange) {
+        onStructureChange();
       }
     } catch (error) {
       console.error('Error deleting item:', error);

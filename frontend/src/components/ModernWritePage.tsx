@@ -7,13 +7,34 @@ import {
   Eye,
   EyeOff,
   Type,
-  Save,
-  GitBranch
+  Save
 } from 'lucide-react';
 import ModernStoryStructure from './ModernStoryStructure';
 import ModernEditor from './ModernEditor';
 import ResizablePane from './ResizablePane';
 import { sceneContentService } from '../lib/sceneContentService';
+import { collection, getDocs, query, orderBy } from 'firebase/firestore';
+import { db } from '../lib/firebase';
+
+interface StoryNode {
+  id: string;
+  title: string;
+  kind: 'epic' | 'episode';
+  parent_id?: string;
+  order_idx: number;
+  repo_id: string;
+  created_at: any;
+  updated_at: any;
+}
+
+interface Scene {
+  id: string;
+  title: string;
+  node_id: string;
+  order_idx: number;
+  created_at: any;
+  updated_at: any;
+}
 
 interface ModernWritePageProps {
   className?: string;
@@ -31,6 +52,10 @@ export default function ModernWritePage({ className = '' }: ModernWritePageProps
   const [showRightPane, setShowRightPane] = useState(true);
   const [activeTab, setActiveTab] = useState<'entities' | 'muse'>('entities');
   
+  // Story structure data for breadcrumbs
+  const [nodes, setNodes] = useState<StoryNode[]>([]);
+  const [scenes, setScenes] = useState<Scene[]>([]);
+  
   // POV/Tense/Style state - these will be synced with sceneMetadata
   const pov = sceneMetadata.pov || 'Third Person';
   const tense = sceneMetadata.tense || 'Past';
@@ -45,7 +70,28 @@ export default function ModernWritePage({ className = '' }: ModernWritePageProps
     setIsTypewriterMode(savedTypewriter);
     setIsFocusMode(savedFocus);
     setShowRightPane(savedRightPane);
+    
+    // Load story structure data
+    loadStoryStructure();
   }, []);
+
+  const loadStoryStructure = async () => {
+    try {
+      // Load nodes (epics and episodes)
+      const nodesQuery = query(collection(db, 'storyNodes'), orderBy('order_idx'));
+      const nodesSnapshot = await getDocs(nodesQuery);
+      const nodesData = nodesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as StoryNode));
+      setNodes(nodesData);
+
+      // Load scenes
+      const scenesQuery = query(collection(db, 'scenes'), orderBy('order_idx'));
+      const scenesSnapshot = await getDocs(scenesQuery);
+      const scenesData = scenesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Scene));
+      setScenes(scenesData);
+    } catch (error) {
+      console.error('Error loading story structure:', error);
+    }
+  };
 
   // Save when leaving the page
   useEffect(() => {
@@ -144,14 +190,20 @@ export default function ModernWritePage({ className = '' }: ModernWritePageProps
     localStorage.setItem('showRightPane', (!newMode).toString());
   };
 
-  const getCurrentSceneTitle = () => {
-    // TODO: Get actual scene title from data
-    return selectedSceneId ? `Scene ${selectedSceneId.slice(-4)}` : 'No Scene Selected';
-  };
 
   const getBreadcrumbs = () => {
-    // TODO: Get actual breadcrumbs from scene hierarchy
-    return ['Epic Name', 'Chapter Name', getCurrentSceneTitle()];
+    if (!selectedSceneId) return ['No Scene Selected'];
+    
+    const scene = scenes.find(s => s.id === selectedSceneId);
+    if (!scene) return ['Scene Not Found'];
+    
+    const episode = nodes.find(n => n.id === scene.node_id);
+    if (!episode) return [scene.title];
+    
+    const epic = nodes.find(n => n.id === episode.parent_id);
+    if (!epic) return [episode.title, scene.title];
+    
+    return [epic.title, episode.title, scene.title];
   };
 
   return (
@@ -163,6 +215,7 @@ export default function ModernWritePage({ className = '' }: ModernWritePageProps
             onSceneSelect={handleSceneSelect}
             onClearSelection={handleClearSelection}
             selectedSceneId={selectedSceneId || undefined}
+            onStructureChange={loadStoryStructure}
           />
         </ResizablePane>
       )}
@@ -185,15 +238,6 @@ export default function ModernWritePage({ className = '' }: ModernWritePageProps
 
           {/* Center Controls */}
           <div className="flex items-center space-x-3">
-            {/* Branch Selector */}
-            <div className="flex items-center space-x-2 px-3 py-1 bg-gray-100 dark:bg-gray-700 rounded-full">
-              <GitBranch className="w-3 h-3 text-gray-500" />
-              <select className="bg-transparent border-none text-xs font-medium text-gray-700 dark:text-gray-300 focus:outline-none">
-                <option value="main">main</option>
-                <option value="draft">draft</option>
-              </select>
-            </div>
-
             {/* POV/Tense/Style Chips */}
             <div className="flex items-center space-x-2">
               <select
