@@ -116,7 +116,7 @@ jobs:
         run: |
           cd frontend
           pnpm install --frozen-lockfile
-          pnpm list
+          pnpm list @typescript-eslint/eslint-plugin @typescript-eslint/parser
 
       # Temporarily disable linting due to ESLint config issues
       # - name: Lint
