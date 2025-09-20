@@ -54,8 +54,8 @@ export default function ModernWritePage({ className = '' }: ModernWritePageProps
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [isTypewriterMode, setIsTypewriterMode] = useState(false);
   const [isFocusMode, setIsFocusMode] = useState(false);
-  const [showRightPane, setShowRightPane] = useState(true);
   const [showLeftPane, setShowLeftPane] = useState(true);
+  const [showRightPane, setShowRightPane] = useState(false);
   const [isExtractingEntities, setIsExtractingEntities] = useState(false);
   const [sceneEntities, setSceneEntities] = useState<SceneEntity[]>([]);
   const [sceneExtraction, setSceneExtraction] = useState<SceneExtraction | null>(null);
@@ -171,6 +171,8 @@ export default function ModernWritePage({ className = '' }: ModernWritePageProps
       const extraction = await firebaseService.getSceneExtraction(sceneId);
       console.log('📊 Loaded entities:', entities);
       console.log('📊 Loaded extraction:', extraction);
+      console.log('📊 Entities count:', entities.length);
+      console.log('📊 Extraction exists:', !!extraction);
       setSceneEntities(entities);
       setSceneExtraction(extraction);
     } catch (error) {
@@ -282,7 +284,6 @@ export default function ModernWritePage({ className = '' }: ModernWritePageProps
         entity_name: editingEntity.entity_name,
         entity_type: editingEntity.entity_type,
         description: editingEntity.description,
-        confidence: editingEntity.confidence,
         actions: editingEntity.actions
       });
       setEditingEntity(null);
@@ -302,7 +303,7 @@ export default function ModernWritePage({ className = '' }: ModernWritePageProps
         entity_name: newEntity.entity_name,
         entity_type: newEntity.entity_type || 'other',
         description: newEntity.description || '',
-        confidence: newEntity.confidence || 0.8,
+        confidence: 0.8, // Default confidence for manually added entities
         actions: newEntity.actions || [],
         extracted_at: new Date()
       });
@@ -411,6 +412,13 @@ export default function ModernWritePage({ className = '' }: ModernWritePageProps
 
           {/* Content */}
           <div className="flex-1 overflow-y-auto p-4">
+            {/* Debug Info */}
+            <div className="mb-4 p-2 bg-gray-100 dark:bg-gray-700 rounded text-xs">
+              <div>Debug: sceneEntities.length = {sceneEntities.length}</div>
+              <div>Debug: sceneExtraction = {sceneExtraction ? 'exists' : 'null'}</div>
+              <div>Debug: selectedSceneId = {selectedSceneId || 'none'}</div>
+            </div>
+            
             {sceneEntities.length > 0 || sceneExtraction ? (
               <div className="space-y-4">
                 {/* Summary */}
@@ -520,9 +528,6 @@ export default function ModernWritePage({ className = '' }: ModernWritePageProps
                                   Actions: {entity.actions.join(', ')}
                                 </div>
                               )}
-                              <div className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                                Confidence: {Math.round(entity.confidence * 100)}%
-                              </div>
                             </div>
                             <div className="flex space-x-1">
                               <button
@@ -568,9 +573,9 @@ export default function ModernWritePage({ className = '' }: ModernWritePageProps
       {/* Main Editor Area */}
       <div className="h-full flex flex-col">
         {/* Header Row */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 transition-colors duration-200">
-          {/* Breadcrumbs */}
-          <div className="flex items-center space-x-2 text-sm">
+        <div className="flex items-center p-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 transition-colors duration-200">
+          {/* Left: Breadcrumbs */}
+          <div className="flex items-center space-x-2 text-sm flex-shrink-0">
             {getBreadcrumbs().map((crumb, index) => (
               <div key={index} className="flex items-center">
                 {index > 0 && <span className="text-gray-400 mx-2">›</span>}
@@ -581,42 +586,44 @@ export default function ModernWritePage({ className = '' }: ModernWritePageProps
             ))}
           </div>
 
-          {/* Center Controls */}
-          <div className="flex items-center space-x-3">
-            {/* POV/Tense/Style Chips */}
-            <div className="flex items-center space-x-2">
-              <select
-                value={pov}
-                onChange={(e) => handleMetadataChange('pov', e.target.value)}
-                className="text-xs px-2 py-1 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 rounded border-none focus:outline-none"
-              >
-                <option value="First Person">1st</option>
-                <option value="Second Person">2nd</option>
-                <option value="Third Person">3rd</option>
-              </select>
-              <select
-                value={tense}
-                onChange={(e) => handleMetadataChange('tense', e.target.value)}
-                className="text-xs px-2 py-1 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 rounded border-none focus:outline-none"
-              >
-                <option value="Present">Present</option>
-                <option value="Past">Past</option>
-                <option value="Future">Future</option>
-              </select>
-              <select
-                value={style}
-                onChange={(e) => handleMetadataChange('style', e.target.value)}
-                className="text-xs px-2 py-1 bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300 rounded border-none focus:outline-none"
-              >
-                <option value="Narrative">Narrative</option>
-                <option value="Dialogue">Dialogue</option>
-                <option value="Action">Action</option>
-              </select>
+          {/* Center: Toolbar Controls */}
+          <div className="flex-1 flex justify-center">
+            <div className="flex items-center space-x-3">
+              {/* POV/Tense/Style Chips */}
+              <div className="flex items-center space-x-2">
+                <select
+                  value={pov}
+                  onChange={(e) => handleMetadataChange('pov', e.target.value)}
+                  className="text-xs px-3 py-1.5 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 rounded-md border-none focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                >
+                  <option value="First Person">1st</option>
+                  <option value="Second Person">2nd</option>
+                  <option value="Third Person">3rd</option>
+                </select>
+                <select
+                  value={tense}
+                  onChange={(e) => handleMetadataChange('tense', e.target.value)}
+                  className="text-xs px-3 py-1.5 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 rounded-md border-none focus:outline-none focus:ring-2 focus:ring-green-500/20"
+                >
+                  <option value="Present">Present</option>
+                  <option value="Past">Past</option>
+                  <option value="Future">Future</option>
+                </select>
+                <select
+                  value={style}
+                  onChange={(e) => handleMetadataChange('style', e.target.value)}
+                  className="text-xs px-3 py-1.5 bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300 rounded-md border-none focus:outline-none focus:ring-2 focus:ring-purple-500/20"
+                >
+                  <option value="Narrative">Narrative</option>
+                  <option value="Dialogue">Dialogue</option>
+                  <option value="Action">Action</option>
+                </select>
+              </div>
             </div>
           </div>
 
-          {/* Right Actions */}
-          <div className="flex items-center space-x-2">
+          {/* Right: Actions */}
+          <div className="flex items-center space-x-2 flex-shrink-0">
 
             {/* Mode Toggles */}
             <button
@@ -769,23 +776,6 @@ export default function ModernWritePage({ className = '' }: ModernWritePageProps
                   className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                   placeholder="walks, speaks, fights"
                 />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Confidence
-                </label>
-                <input
-                  type="range"
-                  min="0"
-                  max="1"
-                  step="0.1"
-                  value={editingEntity.confidence}
-                  onChange={(e) => setEditingEntity(prev => prev ? { ...prev, confidence: parseFloat(e.target.value) } : null)}
-                  className="w-full"
-                />
-                <div className="text-sm text-gray-500 dark:text-gray-400">
-                  {Math.round(editingEntity.confidence * 100)}%
-                </div>
               </div>
             </div>
             <div className="flex justify-end space-x-2 mt-6">
