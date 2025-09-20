@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useAppStore } from "../store/useAppStore";
+import { useFirebaseStore } from "../store/useFirebaseStore";
 import { api } from "../lib/api";
 
 interface SceneVersion {
@@ -19,7 +19,7 @@ interface SentimentPoint {
 }
 
 export default function CommitsPage() {
-  const { branch, structure } = useAppStore();
+  const { branch, structure } = useFirebaseStore();
   const [selectedEpic, setSelectedEpic] = useState<string>("");
   const [selectedChapter, setSelectedChapter] = useState<string>("");
   const [selectedScene, setSelectedScene] = useState<string>("");

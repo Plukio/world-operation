@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { firebaseAutoSave } from "../lib/firebaseAutosave";
-import { firebaseService, StoryNode, Scene, Branch, Entity, Relationship, Repository, EntityProvenance, Commit, SceneVersion, PullRequest } from "../lib/firebaseService";
+import { firebaseService, StoryNode, Scene, Branch, Entity, Relationship, Repository, EntityProvenance, Commit } from "../lib/firebaseService";
 
 interface FirebaseAppState {
   // Core state
@@ -93,8 +93,8 @@ interface FirebaseAppState {
   // Branch CRUD operations
   getBranches: () => Promise<void>;
   getBranch: (id: string) => Promise<Branch | null>;
-  createBranch: (data: Omit<Branch, 'id' | 'createdAt' | 'updatedAt'>) => Promise<Branch | null>;
-  updateBranch: (id: string, data: Partial<Omit<Branch, 'id' | 'createdAt'>>) => Promise<Branch | null>;
+  createBranch: (data: Omit<Branch, 'id' | 'created_at'>) => Promise<Branch | null>;
+  updateBranch: (id: string, data: Partial<Omit<Branch, 'id' | 'created_at'>>) => Promise<Branch | null>;
   deleteBranch: (id: string) => Promise<boolean>;
 
   // Commit operations
@@ -148,7 +148,7 @@ export const useFirebaseStore = create<FirebaseAppState>((set, get) => ({
   setBranch: (branch: Branch) => {
     set({ branch });
     const { current } = get();
-    if (current.sceneId && branch) {
+    if (current.sceneId && branch?.id) {
       // Load latest version for this scene/branch
       get().loadLatestVersion(current.sceneId, branch.id);
     }
@@ -163,7 +163,7 @@ export const useFirebaseStore = create<FirebaseAppState>((set, get) => ({
     }));
 
     const { branch } = get();
-    if (branch) {
+    if (branch?.id) {
       // Load latest version for this scene/branch
       get().loadLatestVersion(sceneId, branch.id);
     }
@@ -201,18 +201,25 @@ export const useFirebaseStore = create<FirebaseAppState>((set, get) => ({
     
     try {
       // Get story nodes and scenes from Firebase
+      console.log('📡 Fetching story nodes and scenes from Firebase...');
       const [nodes, allScenes] = await Promise.all([
         firebaseService.getStoryNodesByRepo(repoId),
         firebaseService.getAllScenes()
       ]);
 
+      console.log('📊 Raw data from Firebase:', { 
+        nodes: nodes, 
+        allScenes: allScenes 
+      });
+
       // Filter scenes that belong to the nodes in this repo
-      const nodeIds = nodes.map(node => node.id);
+      const nodeIds = nodes.map(node => node.id).filter(Boolean);
       const scenes = allScenes.filter(scene => nodeIds.includes(scene.node_id));
 
       console.log('✅ Loaded structure from Firebase:', { 
         nodesCount: nodes.length, 
-        scenesCount: scenes.length 
+        scenesCount: scenes.length,
+        nodeIds: nodeIds
       });
 
       set({
@@ -333,7 +340,7 @@ export const useFirebaseStore = create<FirebaseAppState>((set, get) => ({
           }),
         );
 
-        return result.versionId;
+        return result.versionId || null;
       } else {
         throw new Error(result.error || 'Save failed');
       }
@@ -352,10 +359,10 @@ export const useFirebaseStore = create<FirebaseAppState>((set, get) => ({
       autoSaving: editor.autoSaving 
     });
 
-    if (!current.sceneId || !branch || !editor.dirty || editor.autoSaving) {
+    if (!current.sceneId || !branch?.id || !editor.dirty || editor.autoSaving) {
       console.log('❌ Auto-save skipped:', { 
         noSceneId: !current.sceneId, 
-        noBranch: !branch, 
+        noBranch: !branch?.id, 
         notDirty: !editor.dirty, 
         alreadySaving: editor.autoSaving 
       });
@@ -372,7 +379,7 @@ export const useFirebaseStore = create<FirebaseAppState>((set, get) => ({
     try {
       const result = await firebaseAutoSave.autoSaveScene(
         current.sceneId,
-        branch.id,
+        branch.id!,
         editor.html,
         {
           pov: "Alia", // TODO: Get from style locks
@@ -427,7 +434,7 @@ export const useFirebaseStore = create<FirebaseAppState>((set, get) => ({
 
   refreshCurrentScene: async () => {
     const { current, branch } = get();
-    if (current.sceneId && branch) {
+    if (current.sceneId && branch?.id) {
       console.log('🔄 Refreshing current scene content...');
       await get().loadLatestVersion(current.sceneId, branch.id);
     }
@@ -436,17 +443,19 @@ export const useFirebaseStore = create<FirebaseAppState>((set, get) => ({
   // CRUD operations
   createNode: async (kind: string, title: string, parentId?: string) => {
     const { repoId } = get();
+    console.log('🔄 Creating node:', { kind, title, parentId, repoId });
     try {
-      await firebaseService.createStoryNode({
+      const newNode = await firebaseService.createStoryNode({
         repo_id: repoId,
         kind,
         title,
         parent_id: parentId,
         order_idx: 0,
       });
+      console.log('✅ Node created successfully:', newNode);
       get().refreshStructure();
     } catch (error) {
-      console.error("Failed to create node:", error);
+      console.error("❌ Failed to create node:", error);
     }
   },
 
@@ -781,7 +790,7 @@ export const useFirebaseStore = create<FirebaseAppState>((set, get) => ({
     }
   },
 
-  createBranch: async (data: Omit<Branch, 'id' | 'createdAt' | 'updatedAt'>) => {
+  createBranch: async (data: Omit<Branch, 'id' | 'created_at'>) => {
     try {
       const newBranch = await firebaseService.createBranch(data);
       set((state) => ({ branches: [...state.branches, newBranch] }));
@@ -792,7 +801,7 @@ export const useFirebaseStore = create<FirebaseAppState>((set, get) => ({
     }
   },
 
-  updateBranch: async (id: string, data: Partial<Omit<Branch, 'id' | 'createdAt'>>) => {
+  updateBranch: async (id: string, data: Partial<Omit<Branch, 'id' | 'created_at'>>) => {
     try {
       const updatedBranch = await firebaseService.updateBranch(id, data);
       if (updatedBranch) {

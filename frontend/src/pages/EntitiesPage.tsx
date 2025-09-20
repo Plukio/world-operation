@@ -22,7 +22,7 @@ export default function EntitiesPage() {
   const [tab, setTab] = useState<Kind>("character");
   
   // Firebase store
-  const { entities, relationships, getEntities, getRelationships } = useFirebaseStore();
+  const { getEntities, getRelationships } = useFirebaseStore();
   
   // Load data on mount
   useEffect(() => {

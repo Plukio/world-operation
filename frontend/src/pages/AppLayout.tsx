@@ -30,6 +30,14 @@ export default function AppLayout() {
                 >
                   Commits
                 </NavLink>
+                <NavLink
+                  to="/firebase-test"
+                  className={({ isActive }) =>
+                    `px-3 py-1 rounded ${isActive ? "bg-black text-white" : "hover:bg-gray-100"}`
+                  }
+                >
+                  Firebase Test
+                </NavLink>
         </nav>
       </header>
       <main className="flex-1">

@@ -70,12 +70,8 @@ export default function WritePage() {
 
   // Mock branches for now
   const [branches] = useState([
-    { id: "main", name: "main", created_at: new Date().toISOString() },
-    {
-      id: "alia-survives",
-      name: "alia-survives-eclipse",
-      created_at: new Date().toISOString(),
-    },
+    { id: "main", name: "main", repo_id: "default-repo", created_at: new Date().toISOString() },
+    { id: "alia-survives", name: "alia-survives-eclipse", repo_id: "default-repo", created_at: new Date().toISOString() },
   ]);
 
   // Initialize store on mount
@@ -184,7 +180,9 @@ export default function WritePage() {
     const { type, parentId } = modalConfig;
     if (type === "scene" && parentId) {
       await createScene(parentId, title);
-    } else {
+    } else if (type === "epic") {
+      await createNode(type, title);
+    } else if (type === "chapter" && parentId) {
       await createNode(type, title, parentId);
     }
   };
@@ -207,9 +205,9 @@ export default function WritePage() {
     if (!editingItem) return;
     
     const { type, itemId } = editingItem;
-    if (type === "scene") {
+    if (type === "scene" && itemId) {
       await updateScene(itemId, newTitle);
-    } else {
+    } else if (itemId) {
       await updateNode(itemId, newTitle);
     }
     setEditingItem(null);
@@ -268,7 +266,7 @@ export default function WritePage() {
                 <li key={epic.id}>
                   <div 
                     className="font-medium flex justify-between items-center group"
-                    onContextMenu={(e) => handleContextMenu(e, "epic", epic.id, epic.title)}
+                    onContextMenu={(e) => epic.id && handleContextMenu(e, "epic", epic.id, epic.title)}
                   >
                     {editingItem?.type === "epic" && editingItem.itemId === epic.id ? (
                       <InlineEdit
@@ -279,7 +277,7 @@ export default function WritePage() {
                       />
                     ) : (
                       <span 
-                        onDoubleClick={() => handleDoubleClick("epic", epic.id, epic.title)}
+                        onDoubleClick={() => epic.id && handleDoubleClick("epic", epic.id, epic.title)}
                         className="cursor-pointer hover:bg-gray-100 px-1 py-0.5 rounded"
                         title="Double-click to edit"
                       >
@@ -287,7 +285,7 @@ export default function WritePage() {
                       </span>
                     )}
                     <button
-                      onClick={() => handleCreate("chapter", epic.id)}
+                      onClick={() => epic.id && handleCreate("chapter", epic.id)}
                       className="text-xs bg-blue-600 text-white px-1 py-0.5 rounded opacity-0 group-hover:opacity-100 hover:bg-blue-700"
                       title="Add Chapter"
                     >
@@ -301,7 +299,7 @@ export default function WritePage() {
                         <li key={chapter.id}>
                           <div 
                             className="font-medium text-sm flex justify-between items-center group"
-                            onContextMenu={(e) => handleContextMenu(e, "chapter", chapter.id, chapter.title)}
+                            onContextMenu={(e) => chapter.id && handleContextMenu(e, "chapter", chapter.id, chapter.title)}
                           >
                             {editingItem?.type === "chapter" && editingItem.itemId === chapter.id ? (
                               <InlineEdit
@@ -312,7 +310,7 @@ export default function WritePage() {
                               />
                             ) : (
                               <span 
-                                onDoubleClick={() => handleDoubleClick("chapter", chapter.id, chapter.title)}
+                                onDoubleClick={() => chapter.id && handleDoubleClick("chapter", chapter.id, chapter.title)}
                                 className="cursor-pointer hover:bg-gray-100 px-1 py-0.5 rounded"
                                 title="Double-click to edit"
                               >
@@ -320,7 +318,7 @@ export default function WritePage() {
                               </span>
                             )}
                             <button
-                              onClick={() => handleCreate("scene", chapter.id)}
+                              onClick={() => chapter.id && handleCreate("scene", chapter.id)}
                               className="text-xs bg-purple-600 text-white px-1 py-0.5 rounded opacity-0 group-hover:opacity-100 hover:bg-purple-700"
                               title="Add Scene"
                             >
@@ -344,13 +342,13 @@ export default function WritePage() {
                                       className={`text-left w-full ${
                                         current.sceneId === sc.id ? "font-semibold" : ""
                                       }`}
-                                      onClick={() => handleSceneSelect(sc.id)}
-                                      onContextMenu={(e) => handleContextMenu(e, "scene", sc.id, sc.title)}
+                                      onClick={() => sc.id && handleSceneSelect(sc.id)}
+                                      onContextMenu={(e) => sc.id && handleContextMenu(e, "scene", sc.id, sc.title)}
                                     >
                                       <span 
                                         onDoubleClick={(e) => {
                                           e.stopPropagation();
-                                          handleDoubleClick("scene", sc.id, sc.title);
+                                          sc.id && handleDoubleClick("scene", sc.id, sc.title);
                                         }}
                                         className="cursor-pointer hover:bg-gray-100 px-1 py-0.5 rounded block"
                                         title="Double-click to edit"
