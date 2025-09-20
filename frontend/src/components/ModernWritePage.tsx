@@ -125,6 +125,13 @@ export default function ModernWritePage({ className = '' }: ModernWritePageProps
     console.log('🔍 selectedSceneId changed to:', selectedSceneId);
   }, [selectedSceneId]);
 
+  // Close right pane when no scene is selected
+  useEffect(() => {
+    if (!selectedSceneId) {
+      setShowRightPane(false);
+    }
+  }, [selectedSceneId]);
+
   const handleSceneSelect = async (sceneId: string) => {
     // Save current scene before switching
     if (selectedSceneId && hasUnsavedChanges) {
@@ -425,12 +432,15 @@ export default function ModernWritePage({ className = '' }: ModernWritePageProps
             </button>
             <button
               onClick={() => setShowRightPane(!showRightPane)}
+              disabled={!selectedSceneId}
               className={`p-2 rounded-lg transition-colors ${
-                showRightPane
-                  ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300'
-                  : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700'
+                !selectedSceneId
+                  ? 'text-gray-300 dark:text-gray-600 cursor-not-allowed'
+                  : showRightPane
+                    ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300'
+                    : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700'
               }`}
-              title="Toggle Entities Panel"
+              title={selectedSceneId ? "Toggle Entities Panel" : "Select a scene to view entities"}
             >
               <PanelRight className="w-4 h-4" />
             </button>
@@ -539,7 +549,7 @@ export default function ModernWritePage({ className = '' }: ModernWritePageProps
         </button>
       )}
 
-      {!showRightPane && (
+      {!showRightPane && selectedSceneId && (
         <button
           onClick={() => setShowRightPane(true)}
           className="fixed right-4 top-1/2 transform -translate-y-1/2 z-40 p-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
@@ -550,7 +560,7 @@ export default function ModernWritePage({ className = '' }: ModernWritePageProps
       )}
 
       {/* Right Pane - Inspector */}
-      {showRightPane && !isFocusMode && (
+      {showRightPane && !isFocusMode && selectedSceneId && (
         <ResizablePane side="right" initialWidth={300} minWidth={250} maxWidth={400}>
           <div className="h-full flex flex-col">
             {/* Header */}
