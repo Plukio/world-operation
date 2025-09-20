@@ -1,41 +1,30 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import RichTextEditor from "../components/RichTextEditor";
 import BranchBar from "../components/BranchBar";
 import MusePanel from "../components/MusePanel";
 import PRModal from "../components/PRModal";
+import { useAppStore } from "../store/useAppStore";
 import { api } from "../lib/api";
-
-// Mock data for episodes and scenes
-const MOCK_EPISODES = [
-  { id: "ep1", title: "Episode 1: The Awakening" },
-  { id: "ep2", title: "Episode 2: The Journey" },
-];
-
-const MOCK_SCENES = {
-  ep1: [
-    { id: "sc1", title: "Opening Scene" },
-    { id: "sc2", title: "The Discovery" },
-  ],
-  ep2: [
-    { id: "sc3", title: "The Departure" },
-    { id: "sc4", title: "First Encounter" },
-  ],
-};
 
 export default function WritePage() {
   const [activeTab, setActiveTab] = useState<"episode" | "scene">("episode");
-  const [current, setCurrent] = useState({ episodeId: "ep1", sceneId: "sc1" });
-  const [content, setContent] = useState(
-    "<p>Start writing your story here...</p>",
-  );
   const [extracting, setExtracting] = useState(false);
+  const [showPRModal, setShowPRModal] = useState(false);
 
-  // Git-like state
-  const [currentBranch, setCurrentBranch] = useState({
-    id: "main",
-    name: "main",
-    created_at: new Date().toISOString(),
-  });
+  // Zustand store
+  const {
+    branch,
+    structure,
+    current,
+    editor,
+    setBranch,
+    setCurrentScene,
+    setEditorHtml,
+    refreshStructure,
+    saveVersion,
+  } = useAppStore();
+
+  // Mock branches for now
   const [branches] = useState([
     { id: "main", name: "main", created_at: new Date().toISOString() },
     {
@@ -44,25 +33,47 @@ export default function WritePage() {
       created_at: new Date().toISOString(),
     },
   ]);
-  const [uncommittedCount, setUncommittedCount] = useState(0);
-  const [styleLocks] = useState({
-    pov: "Alia",
-    tense: "present",
-    style: "tense",
-  });
-  const [showPRModal, setShowPRModal] = useState(false);
 
-  // Track content changes for uncommitted count
+  // Initialize store on mount
   useEffect(() => {
-    const hasChanges = content !== "<p>Start writing your story here...</p>";
-    setUncommittedCount(hasChanges ? 1 : 0);
-  }, [content]);
+    if (structure.episodes.length === 0) {
+      refreshStructure();
+    }
+    if (!branch && branches.length > 0) {
+      setBranch(branches[0]);
+    }
+  }, [
+    refreshStructure,
+    setBranch,
+    branch,
+    branches,
+    structure.episodes.length,
+  ]);
+
+  const handleSave = useCallback(async () => {
+    if (editor.dirty) {
+      await saveVersion();
+    }
+  }, [editor.dirty, saveVersion]);
+
+  // Handle save with keyboard shortcut
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "s") {
+        e.preventDefault();
+        handleSave();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [handleSave]);
 
   const handleExtract = async () => {
     setExtracting(true);
     try {
       // Strip HTML tags for extraction
-      const textContent = content.replace(/<[^>]*>/g, "");
+      const textContent = editor.html.replace(/<[^>]*>/g, "");
       await api.extractEntities(textContent);
     } catch (error) {
       console.error("Extraction failed:", error);
@@ -72,9 +83,9 @@ export default function WritePage() {
   };
 
   const handleBranchChange = (branchId: string) => {
-    const branch = branches.find((b) => b.id === branchId);
-    if (branch) {
-      setCurrentBranch(branch);
+    const selectedBranch = branches.find((b) => b.id === branchId);
+    if (selectedBranch) {
+      setBranch(selectedBranch);
     }
   };
 
@@ -83,10 +94,8 @@ export default function WritePage() {
     console.log("Creating branch:", name);
   };
 
-  const handleCommit = (message: string) => {
-    // TODO: Call API to commit changes
-    console.log("Committing:", message);
-    setUncommittedCount(0);
+  const handleCommit = async (message: string) => {
+    await saveVersion(message);
   };
 
   const handleConstraintGenerated = (constraint: string) => {
@@ -111,7 +120,7 @@ export default function WritePage() {
 
   const handleBeatTemplateInserted = (template: string) => {
     // TODO: Insert template into editor
-    setContent(content + template);
+    setEditorHtml(editor.html + template);
   };
 
   const handleWhatIfForked = (whatIf: string) => {
@@ -138,12 +147,12 @@ export default function WritePage() {
     <div className="h-full flex flex-col">
       {/* Branch Bar */}
       <BranchBar
-        currentBranch={currentBranch}
+        currentBranch={branch}
         branches={branches}
         onBranchChange={handleBranchChange}
         onCreateBranch={handleCreateBranch}
         onCommit={handleCommit}
-        uncommittedCount={uncommittedCount}
+        uncommittedCount={editor.dirty ? 1 : 0}
         onPRClick={() => setShowPRModal(true)}
       />
 
@@ -154,29 +163,31 @@ export default function WritePage() {
           <h3 className="font-semibold mb-2">Episodes & Scenes</h3>
           <div className="mb-2">
             <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
-              {currentBranch.name}
+              {branch?.name || "No branch"}
             </span>
           </div>
           <ul className="space-y-2">
-            {MOCK_EPISODES.map((ep) => (
+            {structure.episodes.map((ep) => (
               <li key={ep.id}>
                 <div className="font-medium">{ep.title}</div>
                 <ul className="ml-3 list-disc">
-                  {MOCK_SCENES[ep.id as keyof typeof MOCK_SCENES]?.map((sc) => (
-                    <li key={sc.id}>
-                      <button
-                        className={`text-left ${current.sceneId === sc.id ? "font-semibold" : ""}`}
-                        onClick={() =>
-                          setCurrent({ episodeId: ep.id, sceneId: sc.id })
-                        }
-                      >
-                        {sc.title}
-                        {current.sceneId === sc.id && uncommittedCount > 0 && (
-                          <span className="ml-1 text-orange-500">•</span>
-                        )}
-                      </button>
-                    </li>
-                  ))}
+                  {structure.scenes
+                    .filter((sc) => sc.episode_id === ep.id)
+                    .map((sc) => (
+                      <li key={sc.id}>
+                        <button
+                          className={`text-left ${
+                            current.sceneId === sc.id ? "font-semibold" : ""
+                          }`}
+                          onClick={() => setCurrentScene(sc.id)}
+                        >
+                          {sc.title}
+                          {current.sceneId === sc.id && editor.dirty && (
+                            <span className="ml-1 text-orange-500">•</span>
+                          )}
+                        </button>
+                      </li>
+                    ))}
                 </ul>
               </li>
             ))}
@@ -188,13 +199,13 @@ export default function WritePage() {
           {/* Style Locks */}
           <div className="flex gap-2 mb-2">
             <span className="text-xs bg-gray-100 px-2 py-1 rounded">
-              POV: {styleLocks.pov}
+              POV: Alia
             </span>
             <span className="text-xs bg-gray-100 px-2 py-1 rounded">
-              Tense: {styleLocks.tense}
+              Tense: present
             </span>
             <span className="text-xs bg-gray-100 px-2 py-1 rounded">
-              Style: {styleLocks.style}
+              Style: tense
             </span>
           </div>
 
@@ -213,7 +224,7 @@ export default function WritePage() {
             </button>
           </div>
 
-          <RichTextEditor value={content} onChange={setContent} />
+          <RichTextEditor value={editor.html} onChange={setEditorHtml} />
 
           <div className="mt-3 flex gap-2">
             <button
@@ -223,7 +234,13 @@ export default function WritePage() {
             >
               {extracting ? "Extracting…" : "Extract Entities"}
             </button>
-            <button className="px-3 py-2 border rounded">Save</button>
+            <button
+              className="px-3 py-2 border rounded"
+              onClick={handleSave}
+              disabled={!editor.dirty}
+            >
+              Save (⌘S)
+            </button>
             <button className="px-3 py-2 border rounded">Open Composer</button>
           </div>
         </section>
